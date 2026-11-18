@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Truck Insurance Tycoon — Multiplayer Office League</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    input[type="range"] { accent-color: #3b82f6; }
+    .map-pin { transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; }
+    .map-pin:hover { transform: scale(1.24); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- TOP EXECUTIVE HEADER BAR -->
+  <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 sticky top-0 z-30 shadow-xl">
+    <div class="max-w-[1440px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand & Current Period -->
+      <div class="flex items-center gap-3">
+        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold tracking-tight text-base sm:text-lg text-white">TRUCK INSURANCE TYCOON</h1>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">v0.2 Streamlined</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-0.5">
+            <span id="periodDisplay" class="font-semibold text-slate-200">Year 0 • Pre-Q1 Setup</span>
+            <span>•</span>
+            <span id="marketCycleBadge" class="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-medium">Normal Market</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editable Identity & Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div class="hidden xl:flex items-center gap-2 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700/80">
+          <div class="text-[10px] uppercase font-bold text-slate-400">Cash / Surplus</div>
+          <div id="headerSurplusDisplay" class="text-sm font-extrabold text-emerald-400">$10.00M</div>
+        </div>
+
+        <button id="btnLockPrefs" onclick="showToast('All underwriting, staffing, and R&D preferences locked for next quarter.', 'success')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold border border-slate-700 transition">
+          Lock Preferences
+        </button>
+
+        <button id="btnRunQuarter" onclick="runQuarter(1)" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+          </svg>
+          <span>Run Quarter</span>
+        </button>
+
+        <button id="btnReset" onclick="resetSeason()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 hover:text-rose-300 text-slate-400 text-xs font-semibold border border-slate-700 transition">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- 3-TAB NAVIGATION BAR -->
+    <div class="bg-slate-900 border-t border-slate-800/90">
+      <div class="max-w-[1440px] mx-auto px-4 flex overflow-x-auto gap-1.5 py-2">
+        <button onclick="switchTab('ceo')" id="tab-ceo" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition bg-blue-600 text-white shadow-sm">
+          1. CEO Dashboard
+        </button>
+        <button onclick="switchTab('map')" id="tab-map" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-300 hover:bg-slate-800">
+          2. Market &amp; Map
+        </button>
+        <button onclick="switchTab('commish')" id="tab-commish" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition text-amber-300 hover:bg-slate-800 flex items-center gap-1.5">
+          <span>3. Commissioner Panel</span>
+          <span class="text-[10px] px-1.5 py-0.2 bg-amber-500/20 border border-amber-400/30 rounded font-extrabold">GOD MODE</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NON-BLOCKING TOAST NOTIFICATION -->
+  <div id="toastBanner" class="fixed bottom-4 right-4 z-50 hidden max-w-md bg-slate-900 text-slate-100 px-4 py-3 rounded-xl shadow-2xl border border-slate-700 text-xs sm:text-sm flex items-center gap-3">
+    <span id="toastDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+    <span id="toastText" class="flex-1"></span>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="max-w-[1440px] w-full mx-auto px-4 py-5 flex-1 space-y-5">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: UNIFIED CEO DASHBOARD (SINGLE-SCREEN COMMAND CENTER)           -->
+    <!-- ===================================================================== -->
+    <div id="view-ceo" class="space-y-5">
+
+      <!-- COMPANY IDENTITY & 8-METRIC KPI STRIP -->
+      <section class="bg-slate-900 rounded-2xl border border-slate-800 p-4 shadow-lg">
+        <!-- Identity Row -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">President / CEO Name</label>
+              <input id="ceoNameInput" type="text" value="Scott Slezak" onchange="updateIdentity()" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Carrier Name</label>
+              <input id="companyNameInput" type="text" value="Heartland Haulers Mutual" onchange="updateIdentity()" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">HQ City &amp; State</label>
+              <select id="hqCitySelect" onchange="updateIdentity()" class="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 shrink-0">
+            <div>
+              <div class="text-[10px] font-bold uppercase text-slate-400">League Surplus Rank</div>
+              <div id="kpiRank" class="text-base font-extrabold text-white">#1 of 10 Carriers</div>
+            </div>
+            <div class="h-8 w-px bg-slate-800"></div>
+            <div>
+              <div class="text-[10px] font-bold uppercase text-slate-400">Cash / Surplus</div>
+              <div id="kpiSurplus" class="text-base font-extrabold text-emerald-400">$10.00M</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8-Card KPI Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 pt-4">
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Qtr Written GWP</div>
+            <div id="kpiQtrGwp" class="text-base font-extrabold text-white mt-0.5">$0</div>
+            <div id="kpiTrailingGwp" class="text-[11px] text-slate-400">Trailing 4Q: $0</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Earned Premium</div>
+            <div id="kpiEarned" class="text-base font-extrabold text-white mt-0.5">$0</div>
+            <div class="text-[11px] text-slate-400">25% / Qtr Cohort</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Loss Ratio</div>
+            <div id="kpiLossRatio" class="text-base font-extrabold text-slate-200 mt-0.5">—</div>
+            <div id="kpiLossDollars" class="text-[11px] text-slate-400">Losses: $0</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Expense Ratio</div>
+            <div id="kpiExpenseRatio" class="text-base font-extrabold text-slate-200 mt-0.5">—</div>
+            <div id="kpiExpenseDollars" class="text-[11px] text-slate-400">Expenses: $0</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Combined Ratio</div>
+            <div id="kpiCombinedRatio" class="text-base font-extrabold text-slate-200 mt-0.5">—</div>
+            <div class="text-[11px] text-slate-400">Target &lt; 96.0%</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Net UW Profit</div>
+            <div id="kpiUwProfit" class="text-base font-extrabold text-slate-200 mt-0.5">$0</div>
+            <div id="kpiSurplusDelta" class="text-[11px] text-slate-400">vs Start: $0</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Active Policies</div>
+            <div id="kpiPolicies" class="text-base font-extrabold text-blue-400 mt-0.5">0</div>
+            <div id="kpiNewPolicies" class="text-[11px] text-slate-400">Last Qtr New: 0</div>
+          </div>
+          <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/90">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Total Headcount</div>
+            <div id="kpiHeadcount" class="text-base font-extrabold text-indigo-400 mt-0.5">10 FTEs</div>
+            <div id="kpiPayrollSummary" class="text-[11px] text-slate-400">Payroll: $245K/qtr</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- UNIFIED STRATEGY & OPERATIONS GRID (ALL CONTROLS ON ONE SCREEN) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- LEFT COLUMN (4 COLS): CHANNELS, PRICING & RISK APPETITE -->
+        <div class="lg:col-span-4 bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-5 flex flex-col justify-between">
+          <div class="space-y-5">
+            <!-- 1. Distribution Channels -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">1. Distribution Channels</h2>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30">Mix = 100%</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">Balances acquisition commission vs. submission volume.</p>
+
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span>Direct-to-Trucker <span class="text-slate-400 font-normal">(4% Mktg)</span></span>
+                    <span id="valDirect" class="text-blue-400 font-bold">30%</span>
+                  </div>
+                  <input id="sliderDirect" type="range" min="0" max="100" value="30" oninput="adjustChannels('direct')" class="w-full" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span>Retail Agents <span class="text-slate-400 font-normal">(12% Comm)</span></span>
+                    <span id="valRetail" class="text-blue-400 font-bold">45%</span>
+                  </div>
+                  <input id="sliderRetail" type="range" min="0" max="100" value="45" oninput="adjustChannels('retail')" class="w-full" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span>Wholesale Brokers <span class="text-slate-400 font-normal">(18% Comm)</span></span>
+                    <span id="valWholesale" class="text-blue-400 font-bold">25%</span>
+                  </div>
+                  <input id="sliderWholesale" type="range" min="0" max="100" value="25" oninput="adjustChannels('wholesale')" class="w-full" />
+                </div>
+              </div>
+            </div>
+
+            <hr class="border-slate-800" />
+
+            <!-- 2. Pricing Aggression (-15% Conservative to +20% Ultra-Aggressive Discounting) -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">2. Pricing Aggression</h2>
+                <span id="pricingBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-200">0% Market Rate</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2.5">Higher discounting boosts quote hit-rate but cuts rate adequacy.</p>
+              <input id="sliderPricing" type="range" min="-15" max="20" step="1" value="0" oninput="updatePricingUI()" class="w-full" />
+              <div class="flex justify-between text-[10px] font-semibold text-slate-400 mt-1">
+                <span>-15% Conservative</span>
+                <span>0% Market</span>
+                <span>+20% Ultra-Aggressive</span>
+              </div>
+              <div id="pricingNote" class="mt-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
+                Neutral market pricing: standard hit-rate and baseline rate adequacy.
+              </div>
+            </div>
+
+            <hr class="border-slate-800" />
+
+            <!-- 3. Target Risk Appetite -->
+            <div>
+              <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200 mb-1">3. Target Risk Appetite</h2>
+              <p class="text-xs text-slate-400 mb-2.5">Crowded risk tiers suffer soft-market rate pressure.</p>
+              <div id="appetiteOptions" class="space-y-1.5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MIDDLE COLUMN (4 COLS): COVERAGE LINES & PACKAGE SYNERGY -->
+        <div class="lg:col-span-4 bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">4. Coverage Lines Appetite</h2>
+              <span id="packageBadge" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1.15x Package</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Trucking fleets prefer multi-line package carriers. Writing 3+ lines unlocks conversion bonuses.</p>
+
+            <div id="coverageLinesContainer" class="space-y-2.5"></div>
+          </div>
+
+          <div class="space-y-2.5">
+            <div id="glTrapAlert" class="hidden p-3 rounded-xl bg-rose-950/70 border border-rose-500/40 text-xs text-rose-200">
+              <span class="font-extrabold text-rose-300">Small-Universe Trap Alert:</span> Niche lines like General Liability have near-zero losses, but their tiny submission pool cannot cover fixed payroll if over-staffed!
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1">
+              <div class="font-bold text-slate-200">Underwriting Line Mechanics:</div>
+              <div>• <strong class="text-slate-300">Auto Liability:</strong> Massive GWP driver, high shock-verdict tail risk.</div>
+              <div>• <strong class="text-slate-300">General Liability:</strong> Tiny universe (260/qtr), 0–10% typical loss ratio.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN (4 COLS): DEPARTMENT STAFFING & PAY + TECH R&D -->
+        <div class="lg:col-span-4 bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col justify-between space-y-5">
+          <!-- 5. Department Staffing & Pay Posture -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">5. Staffing &amp; Pay Posture</h2>
+              <span id="liveStaffSummaryBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">10 FTEs • $245K/qtr</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Headcount scales automatically with your active book size &amp; posture. Pay drives skill quality.</p>
+
+            <div id="staffingMatrixContainer" class="space-y-2.5"></div>
+
+            <div id="capacityStrainWarning" class="hidden mt-2.5 p-2.5 rounded-xl bg-amber-950/70 border border-amber-500/40 text-[11px] text-amber-200">
+              <span class="font-bold text-amber-300">Capacity Strain Risk:</span> Lean staffing or Low pay on an aggressive book will cause underwriting leakage and slower quote turnaround.
+            </div>
+          </div>
+
+          <hr class="border-slate-800" />
+
+          <!-- 6. Technology & R&D -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">6. Technology &amp; R&amp;D</h2>
+              <span id="liveTechSpendBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">$95K / qtr</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-2.5">Select R&amp;D tier per pillar to boost UW capacity, loss control, and portal conversion.</p>
+
+            <div id="techPillarsContainer" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM SECTION: 4-QUARTER COHORTS TABLE & QUARTERLY MARKET WIRE -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Quarterly Market News Ticker (4 Cols) -->
+        <div class="lg:col-span-4 bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col">
+          <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200 mb-1">Quarterly Market &amp; UW Wire</h3>
+          <p class="text-xs text-slate-400 mb-3">Why your numbers moved: market cycles, crowding &amp; shock losses.</p>
+          <div id="newsFeedContainer" class="space-y-2.5 overflow-y-auto max-h-80 pr-1 flex-1">
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
+              <span class="font-bold text-blue-400">Year 0 Pre-Launch:</span> Configure your channels, pricing aggression, risk appetite, coverage lines, staffing posture, and R&amp;D tiers above—then click <strong class="text-white">Run Quarter</strong> to write Q1 policies.
+            </div>
+          </div>
+        </div>
+
+        <!-- Active 4-Quarter Policy Cohorts & Rollover Table (8 Cols) -->
+        <div class="lg:col-span-8 bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">Active 4-Quarter Policy Cohorts &amp; Quarterly Results</h3>
+              <p class="text-xs text-slate-400">Each annual policy cohort earns 25% of GWP per quarter over 4 quarters, then automatically rolls into renewal.</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                  <th class="py-2.5 px-2">Quarter</th>
+                  <th class="py-2.5 px-2 text-right">Policies</th>
+                  <th class="py-2.5 px-2 text-right">Written GWP</th>
+                  <th class="py-2.5 px-2 text-right">Earned Prem.</th>
+                  <th class="py-2.5 px-2 text-right">Incurred Loss</th>
+                  <th class="py-2.5 px-2 text-right">Loss Ratio</th>
+                  <th class="py-2.5 px-2 text-right">Exp. Ratio</th>
+                  <th class="py-2.5 px-2 text-right">Combined</th>
+                  <th class="py-2.5 px-2 text-right">UW Profit</th>
+                  <th class="py-2.5 px-2 text-center">Cohort Lifecycle</th>
+                </tr>
+              </thead>
+              <tbody id="cohortTableBody" class="divide-y divide-slate-800/80">
+                <tr>
+                  <td colspan="10" class="py-10 text-center text-slate-500">No quarters simulated yet. Click <strong class="text-slate-300">Run Quarter</strong> to begin Year 1 Q1.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: MARKET & MAP (US COMPETITION MAP + SORTABLE LEADERBOARD)       -->
+    <!-- ===================================================================== -->
+    <div id="view-map" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Interactive US SVG Map (7 Cols) -->
+        <div class="lg:col-span-7 bg-slate-900 rounded-2xl border border-slate-800 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">US Carrier Footprint Map</h2>
+              <p class="text-xs text-slate-400">Click any HQ pin to inspect public market filings.</p>
+            </div>
+            <div class="flex items-center gap-4 text-xs">
+              <span class="flex items-center gap-1.5 font-semibold text-blue-400"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Your HQ</span>
+              <span class="flex items-center gap-1.5 font-semibold text-amber-400"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> AI Rivals (9)</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 rounded-2xl p-3 border border-slate-800 overflow-hidden">
+            <svg viewBox="0 0 800 470" class="w-full h-auto select-none">
+              <defs>
+                <pattern id="darkGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.8"/>
+                </pattern>
+              </defs>
+              <rect width="800" height="470" fill="url(#darkGrid)" />
+              <!-- Stylized Contiguous US Outline -->
+              <path d="M 78,60 L 175,54 L 285,66 L 410,70 L 495,86 L 575,90 L 645,73 L 718,50 L 745,86 L 722,142 L 690,182 L 672,238 L 645,292 L 625,362 L 640,415 L 615,428 L 592,378 L 545,352 L 485,360 L 445,372 L 415,422 L 385,418 L 352,365 L 285,355 L 220,332 L 145,310 L 95,258 L 68,182 L 62,108 Z"
+                fill="#0f172a" stroke="#3b82f6" stroke-opacity="0.5" stroke-width="2" stroke-linejoin="round" />
+              <!-- Interstate Freight Corridors -->
+              <path d="M 115,135 L 392,205 L 488,185 L 668,158" fill="none" stroke="#334155" stroke-width="1.2" stroke-dasharray="4,4" />
+              <path d="M 392,205 L 398,325 L 565,295" fill="none" stroke="#334155" stroke-width="1.2" stroke-dasharray="4,4" />
+              <text x="145" y="112" fill="#334155" font-size="11" font-weight="800" letter-spacing="2">WEST</text>
+              <text x="365" y="132" fill="#334155" font-size="11" font-weight="800" letter-spacing="2">MIDWEST</text>
+              <text x="615" y="132" fill="#334155" font-size="11" font-weight="800" letter-spacing="2">NORTHEAST</text>
+              <text x="470" y="305" fill="#334155" font-size="11" font-weight="800" letter-spacing="2">SOUTH</text>
+              <g id="mapPinsLayer"></g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Competitor Public Intel + Visual Market Share & Combined Ratio Bars (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+          <div id="competitorIntelCard" class="bg-slate-900 rounded-2xl border border-slate-800 p-5"></div>
+
+          <div class="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex-1">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-3">Market Share (Cumul. GWP) &amp; Combined Ratio</h3>
+            <div id="marketComparisonChart" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SORTABLE 10-CARRIER MARKET LEADERBOARD -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200">League Market Leaderboard</h3>
+            <p class="text-xs text-slate-400">Public filings across all 10 carriers. Internal pay, staffing ratios, and R&amp;D levels remain confidential.</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400 font-semibold">Sort by:</span>
+            <select id="leaderboardSortSelect" onchange="renderMarketAndMap()" class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white">
+              <option value="surplus">Cash / Surplus (High → Low)</option>
+              <option value="combined">Combined Ratio (Best → Worst)</option>
+              <option value="gwp">Cumulative GWP (High → Low)</option>
+              <option value="uwProfit">Last Qtr UW Profit (High → Low)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                <th class="py-2.5 px-2">Rank</th>
+                <th class="py-2.5 px-2">Carrier &amp; CEO</th>
+                <th class="py-2.5 px-2">HQ City</th>
+                <th class="py-2.5 px-2">Active Channels</th>
+                <th class="py-2.5 px-2 text-right">Headcount</th>
+                <th class="py-2.5 px-2 text-right">Active Policies</th>
+                <th class="py-2.5 px-2 text-right">Cumul. GWP</th>
+                <th class="py-2.5 px-2 text-right">Loss Ratio</th>
+                <th class="py-2.5 px-2 text-right">Exp. Ratio</th>
+                <th class="py-2.5 px-2 text-right">Combined</th>
+                <th class="py-2.5 px-2 text-right">UW Profit (Qtr)</th>
+                <th class="py-2.5 px-2 text-right">Surplus</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody" class="divide-y divide-slate-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: COMMISSIONER PANEL (GOD MODE)                                  -->
+    <!-- ===================================================================== -->
+    <div id="view-commish" class="hidden space-y-5">
+      <div class="bg-slate-900 rounded-2xl border border-amber-500/30 p-5 shadow-lg">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-extrabold text-[10px] uppercase">Commissioner God Mode</span>
+              <h2 class="text-base font-extrabold text-white">League Director &amp; Macro Shock Simulator</h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Inspect every rival's confidential pay, staffing posture, R&amp;D, and pricing sliders—or inject macro market events.</p>
+          </div>
+
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1">Macro Environment Event</label>
+              <select id="macroSelect" onchange="gameState.macroOverride = this.value" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white">
+                <option value="auto">Auto / Organic Market Cycle</option>
+                <option value="normal">Normal Market</option>
+                <option value="hard">Hard Market Rate Surge (+15% Rates)</option>
+                <option value="verdicts">Nuclear Verdict Wave (+38% AL Severity)</option>
+                <option value="recession">Freight Recession (-25% Submissions)</option>
+                <option value="hail">Midwest Cat Hailstorm (+45% PD Losses)</option>
+              </select>
+            </div>
+
+            <button onclick="runQuarter(1)" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition">
+              Run 1 Quarter
+            </button>
+            <button onclick="runQuarter(4)" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition">
+              Sim 4 Quarters (1 Year)
+            </button>
+            <button onclick="resetSeason()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-200 border border-slate-700 font-bold text-xs transition">
+              Reset Season
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL 10 CARRIERS SECRET STRATEGY MATRIX -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 p-5">
+        <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-200 mb-1">Confidential Strategy Matrix (All 10 Carriers)</h3>
+        <p class="text-xs text-slate-400 mb-3">Full transparency into every carrier's pay tiers, staffing posture, R&amp;D spend, risk appetite, and underwriting performance.</p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                <th class="py-2.5 px-2">Carrier (CEO)</th>
+                <th class="py-2.5 px-2">Archetype</th>
+                <th class="py-2.5 px-2">Channels (D/R/W)</th>
+                <th class="py-2.5 px-2">Pricing</th>
+                <th class="py-2.5 px-2">Appetite &amp; Lines</th>
+                <th class="py-2.5 px-2">Pay (UW/Clm/Sls/Fin)</th>
+                <th class="py-2.5 px-2">Staffing Posture</th>
+                <th class="py-2.5 px-2 text-right">FTEs</th>
+                <th class="py-2.5 px-2 text-right">Combined</th>
+                <th class="py-2.5 px-2 text-right">Surplus</th>
+              </tr>
+            </thead>
+            <tbody id="commishTableBody" class="divide-y divide-slate-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. REFERENCE DATA
+    // =========================================================================
+    const US_CITIES = [
+      { label: "Omaha, NE", x: 392, y: 205 },
+      { label: "Chicago, IL", x: 488, y: 185 },
+      { label: "Minneapolis, MN", x: 422, y: 142 },
+      { label: "Dallas, TX", x: 398, y: 325 },
+      { label: "Atlanta, GA", x: 565, y: 295 },
+      { label: "Columbus, OH", x: 552, y: 198 },
+      { label: "Phoenix, AZ", x: 205, y: 292 },
+      { label: "Charlotte, NC", x: 602, y: 262 },
+      { label: "Boise, ID", x: 162, y: 138 },
+      { label: "Seattle, WA", x: 105, y: 82 },
+      { label: "Denver, CO", x: 292, y: 222 },
+      { label: "Kansas City, MO", x: 418, y: 232 },
+      { label: "Nashville, TN", x: 525, y: 255 },
+      { label: "Harrisburg, PA", x: 632, y: 175 },
+      { label: "Jacksonville, FL", x: 602, y: 348 }
+    ];
+
+    const RISK_TIERS = [
+      { id: "preferred", label: "Preferred", desc: "Cleanest fleets, 3+ yrs authority. Lowest loss frequency, tighter margins.", baseLoss: 0.49, volMult: 0.68 },
+      { id: "pref_std", label: "Preferred / Standard", desc: "Balanced regional & long-haul fleets with strong safety scores.", baseLoss: 0.56, volMult: 0.96 },
+      { id: "standard", label: "Standard", desc: "Largest core trucking pool. Fierce competition & moderate severity.", baseLoss: 0.63, volMult: 1.25 },
+      { id: "std_sub", label: "Standard / Substandard", desc: "New ventures & mixed MVRs. Higher rates with elevated crash exposure.", baseLoss: 0.72, volMult: 1.05 },
+      { id: "substandard", label: "Substandard / All", desc: "High-risk turnaround fleets. Rich premium, severe verdict volatility.", baseLoss: 0.83, volMult: 0.80 }
+    ];
+
+    const COVERAGE_LINES = [
+      { id: "AL", name: "Auto Liability (AL)", universe: 1850, avgPrem: 14800, baseLR: 0.67, tag: "Huge Pool • Shock Verdict Risk" },
+      { id: "PD", name: "Physical Damage (PD)", universe: 1420, avgPrem: 6900, baseLR: 0.55, tag: "Large Pool • Weather/Collision" },
+      { id: "CARGO", name: "Motor Truck Cargo", universe: 1120, avgPrem: 3500, baseLR: 0.51, tag: "Medium Pool • Theft/Spoilage" },
+      { id: "TI", name: "Trailer Interchange (TI)", universe: 500, avgPrem: 1850, baseLR: 0.41, tag: "Small Pool • Low Frequency" },
+      { id: "GL", name: "General Liability (GL)", universe: 260, avgPrem: 1400, baseLR: 0.08, tag: "Tiny Pool • 0–10% Loss Freq" }
+    ];
+
+    const DEPARTMENTS = [
+      { id: "uw", name: "Underwriting", role: "Risk selection & quote speed", baseFloor: 3, scaleDivisor: 1400000, midSalary: 27000 },
+      { id: "claims", name: "Claims", role: "Severity & leakage defense", baseFloor: 3, scaleDivisor: 1300000, midSalary: 24000 },
+      { id: "sales", name: "Sales & Mktg", role: "Broker & direct conversion", baseFloor: 2, scaleDivisor: 1800000, midSalary: 25000 },
+      { id: "finance", name: "Finance", role: "Expense & rate discipline", baseFloor: 2, scaleDivisor: 2400000, midSalary: 26000 }
+    ];
+
+    const PAY_LEVELS = {
+      low: { label: "Low", salaryMult: 0.80, effectiveness: 0.78 },
+      mid: { label: "Mid", salaryMult: 1.00, effectiveness: 1.00 },
+      high: { label: "High", salaryMult: 1.28, effectiveness: 1.25 }
+    };
+
+    const STAFFING_POSTURES = {
+      lean: { label: "Lean", ratioMult: 0.70 },
+      avg: { label: "Average", ratioMult: 1.00 },
+      high: { label: "High", ratioMult: 1.40 }
+    };
+
+    const TECH_PILLARS = [
+      { id: "rating", name: "Automated Rating & VIN Tech", impact: "+UW Capacity & Speed", baseCost: 30000 },
+      { id: "telematics", name: "Telematics & Loss Control", impact: "-AL/PD Loss Frequency", baseCost: 35000 },
+      { id: "claims", name: "Claims Automation", impact: "-Severity Leakage", baseCost: 25000 },
+      { id: "portal", name: "Broker / Direct Portal", impact: "+Hit Rate & -Acq Cost", baseCost: 30000 }
+    ];
+
+    const TECH_TIERS = [
+      { lvl: 0, label: "Off", mult: 0 },
+      { lvl: 1, label: "Basic", mult: 1 },
+      { lvl: 2, label: "Pro", mult: 2 },
+      { lvl: 3, label: "Elite", mult: 3.2 }
+    ];
+
+    // =========================================================================
+    // 2. GAME STATE & 9 DISTINCT AI COMPETITORS
+    // =========================================================================
+    let gameState = {};
+
+    function initGameState() {
+      const user = {
+        id: "user",
+        isUser: true,
+        name: "Heartland Haulers Mutual",
+        ceo: "Scott Slezak",
+        city: "Omaha, NE",
+        archetype: "Player CEO (Custom)",
+        channels: { direct: 30, retail: 45, wholesale: 25 },
+        pricing: 0, // -15 (Conservative) to +20 (Ultra-Aggressive Discounting)
+        appetite: "pref_std",
+        lines: { AL: true, PD: true, CARGO: true, TI: false, GL: false },
+        deptPay: { uw: "mid", claims: "mid", sales: "mid", finance: "mid" },
+        deptStaffing: { uw: "avg", claims: "avg", sales: "avg", finance: "avg" },
+        tech: { rating: 1, telematics: 1, claims: 0, portal: 1 },
+        surplus: 10000000,
+        cumGwp: 0,
+        cohorts: [], // { qtrWritten, label, policies, annualGwp, remainingQtrs, baseExpectedLR, earnedTotal, lossTotal }
+        history: []
+      };
+
+      const aiConfigs = [
+        { id: "ai1", name: "Windy City Freight Ins.", ceo: "Claire Novak", city: "Chicago, IL", archetype: "All-Lines Retail Mainstay", channels: { direct: 15, retail: 65, wholesale: 20 }, pricing: 3, appetite: "standard", lines: { AL: true, PD: true, CARGO: true, TI: true, GL: true }, deptPay: { uw: "high", claims: "mid", sales: "mid", finance: "mid" }, deptStaffing: { uw: "avg", claims: "avg", sales: "avg", finance: "avg" }, tech: { rating: 2, telematics: 2, claims: 1, portal: 2 } },
+        { id: "ai2", name: "NorthStar Direct", ceo: "Andy Lindstrom", city: "Minneapolis, MN", archetype: "Tech-Led Direct Discounter", channels: { direct: 75, retail: 20, wholesale: 5 }, pricing: 12, appetite: "preferred", lines: { AL: true, PD: true, CARGO: false, TI: false, GL: false }, deptPay: { uw: "mid", claims: "mid", sales: "high", finance: "mid" }, deptStaffing: { uw: "lean", claims: "lean", sales: "avg", finance: "lean" }, tech: { rating: 3, telematics: 3, claims: 2, portal: 3 } },
+        { id: "ai3", name: "Lone Star Wholesale", ceo: "Rico Mendez", city: "Dallas, TX", archetype: "Aggressive Wholesale Giant", channels: { direct: 5, retail: 20, wholesale: 75 }, pricing: 15, appetite: "std_sub", lines: { AL: true, PD: true, CARGO: true, TI: true, GL: true }, deptPay: { uw: "mid", claims: "low", sales: "high", finance: "low" }, deptStaffing: { uw: "high", claims: "avg", sales: "high", finance: "lean" }, tech: { rating: 2, telematics: 1, claims: 1, portal: 2 } },
+        { id: "ai4", name: "Peach State Preferred", ceo: "Marcus Vance", city: "Atlanta, GA", archetype: "Disciplined Preferred Specialist", channels: { direct: 25, retail: 65, wholesale: 10 }, pricing: -8, appetite: "preferred", lines: { AL: true, PD: true, CARGO: true, TI: true, GL: false }, deptPay: { uw: "high", claims: "high", sales: "mid", finance: "high" }, deptStaffing: { uw: "avg", claims: "avg", sales: "lean", finance: "avg" }, tech: { rating: 2, telematics: 3, claims: 2, portal: 1 } },
+        { id: "ai5", name: "Buckeye Heavy Haul", ceo: "Trevor Brooks", city: "Columbus, OH", archetype: "Standard Core Volume Builder", channels: { direct: 10, retail: 55, wholesale: 35 }, pricing: 7, appetite: "standard", lines: { AL: true, PD: true, CARGO: true, TI: false, GL: false }, deptPay: { uw: "mid", claims: "mid", sales: "mid", finance: "low" }, deptStaffing: { uw: "avg", claims: "avg", sales: "avg", finance: "lean" }, tech: { rating: 2, telematics: 1, claims: 1, portal: 2 } },
+        { id: "ai6", name: "Sunbelt Substandard", ceo: "Gavin Navarro", city: "Phoenix, AZ", archetype: "High-Yield Distressed E&S", channels: { direct: 0, retail: 15, wholesale: 85 }, pricing: -4, appetite: "substandard", lines: { AL: true, PD: true, CARGO: false, TI: false, GL: false }, deptPay: { uw: "high", claims: "high", sales: "mid", finance: "mid" }, deptStaffing: { uw: "high", claims: "high", sales: "lean", finance: "avg" }, tech: { rating: 1, telematics: 3, claims: 3, portal: 1 } },
+        { id: "ai7", name: "Carolina Coastal Lines", ceo: "Natalie Sutton", city: "Charlotte, NC", archetype: "Lean Digital Challenger", channels: { direct: 45, retail: 45, wholesale: 10 }, pricing: 5, appetite: "pref_std", lines: { AL: true, PD: true, CARGO: true, TI: true, GL: false }, deptPay: { uw: "mid", claims: "mid", sales: "high", finance: "mid" }, deptStaffing: { uw: "lean", claims: "lean", sales: "avg", finance: "lean" }, tech: { rating: 3, telematics: 2, claims: 2, portal: 3 } },
+        { id: "ai8", name: "Gem State Cargo Mutual", ceo: "Devon Chen", city: "Boise, ID", archetype: "Cargo & PhysDam Niche Carrier", channels: { direct: 15, retail: 55, wholesale: 30 }, pricing: 2, appetite: "pref_std", lines: { AL: false, PD: true, CARGO: true, TI: true, GL: true }, deptPay: { uw: "high", claims: "mid", sales: "mid", finance: "mid" }, deptStaffing: { uw: "avg", claims: "avg", sales: "avg", finance: "avg" }, tech: { rating: 2, telematics: 1, claims: 2, portal: 2 } },
+        { id: "ai9", name: "Cascadia Fleet Underwriters", ceo: "Hannah Keller", city: "Seattle, WA", archetype: "Conservative Regional Mutual", channels: { direct: 20, retail: 70, wholesale: 10 }, pricing: -6, appetite: "pref_std", lines: { AL: true, PD: true, CARGO: true, TI: false, GL: true }, deptPay: { uw: "mid", claims: "high", sales: "mid", finance: "high" }, deptStaffing: { uw: "avg", claims: "avg", sales: "lean", finance: "avg" }, tech: { rating: 1, telematics: 2, claims: 2, portal: 1 } }
+      ];
+
+      const aiCarriers = aiConfigs.map(cfg => ({
+        ...cfg,
+        isUser: false,
+        surplus: 10000000,
+        cumGwp: 0,
+        cohorts: [],
+        history: []
+      }));
+
+      return {
+        quarter: 0,
+        marketCycle: "Normal Market",
+        macroOverride: "auto",
+        selectedMapCarrierId: "user",
+        news: [],
+        carriers: [user, ...aiCarriers]
+      };
+    }
+
+    // =========================================================================
+    // 3. DYNAMIC HEADCOUNT, PAYROLL & R&D CALCULATIONS (OUTPUT OF INPUTS)
+    // =========================================================================
+    function getActiveInForceGwp(carrier) {
+      return carrier.cohorts
+        .filter(c => c.remainingQtrs > 0)
+        .reduce((sum, c) => sum + c.annualGwp, 0);
+    }
+
+    function calculateDepartmentMetrics(carrier) {
+      const inForceGwp = getActiveInForceGwp(carrier);
+      let totalFte = 0;
+      let totalPayroll = 0;
+      const byDept = {};
+
+      DEPARTMENTS.forEach(dept => {
+        const payKey = carrier.deptPay[dept.id];
+        const staffKey = carrier.deptStaffing[dept.id];
+        const payObj = PAY_LEVELS[payKey];
+        const staffObj = STAFFING_POSTURES[staffKey];
+
+        // Tech rating & claims automation slightly improve FTE scaling efficiency
+        let techScaleRelief = 1.0;
+        if (dept.id === "uw") techScaleRelief = 1 - (carrier.tech.rating * 0.06);
+        if (dept.id === "claims") techScaleRelief = 1 - (carrier.tech.claims * 0.05);
+
+        const rawFte = (dept.baseFloor + (inForceGwp / dept.scaleDivisor) * techScaleRelief) * staffObj.ratioMult;
+        const fte = Math.max(1, Math.round(rawFte));
+        const qtrSalaryPerFte = Math.round(dept.midSalary * payObj.salaryMult);
+        const deptPayroll = fte * qtrSalaryPerFte;
+
+        // Effectiveness % combines pay level + staffing posture buffer
+        const postureQualityMod = staffKey === "lean" ? 0.92 : staffKey === "high" ? 1.06 : 1.00;
+        const effectivenessPct = Math.round(payObj.effectiveness * postureQualityMod * 100);
+
+        totalFte += fte;
+        totalPayroll += deptPayroll;
+
+        byDept[dept.id] = {
+          fte,
+          deptPayroll,
+          effectivenessPct,
+          effectivenessMult: payObj.effectiveness * postureQualityMod,
+          payKey,
+          staffKey
+        };
+      });
+
+      return { totalFte, totalPayroll, byDept };
+    }
+
+    function calculateQuarterlyTechSpend(carrier) {
+      return TECH_PILLARS.reduce((sum, p) => {
+        const tierObj = TECH_TIERS[carrier.tech[p.id]];
+        return sum + Math.round(p.baseCost * tierObj.mult);
+      }, 0);
+    }
+
+    // =========================================================================
+    // 4. SIMULATION ENGINE ("RUN QUARTER")
+    // =========================================================================
+    function runQuarter(count = 1) {
+      for (let step = 0; step < count; step++) {
+        simulateSingleQuarter();
+      }
+      renderAll();
+      const q = gameState.quarter;
+      const y = Math.ceil(q / 4);
+      const qInY = ((q - 1) % 4) + 1;
+      showToast(count > 1 ? `Simulated ${count} quarters through Y${y} Q${qInY}!` : `Y${y} Q${qInY} simulated! Review your cohorts and market rank.`, "success");
+    }
+
+    function simulateSingleQuarter() {
+      gameState.quarter += 1;
+      const qIdx = gameState.quarter;
+      const year = Math.ceil(qIdx / 4);
+      const qInYear = ((qIdx - 1) % 4) + 1;
+      const periodLabel = `Y${year} Q${qInYear}`;
+
+      const macro = resolveMacroEnvironment(qIdx);
+      gameState.marketCycle = macro.label;
+
+      // AI bots adapt pricing gently based on prior Combined Ratio
+      gameState.carriers.forEach(c => {
+        if (!c.isUser && !c.humanControlled && c.history.length > 0) {
+          const last = c.history[c.history.length - 1];
+          if (last.combinedRatio > 103 && c.pricing > -12) c.pricing -= 3;
+          else if (last.combinedRatio < 89 && c.pricing < 16) c.pricing += 2;
+        }
+      });
+
+      // Count risk tier crowding across all 10 carriers
+      const tierCounts = {};
+      RISK_TIERS.forEach(t => tierCounts[t.id] = 0);
+      gameState.carriers.forEach(c => tierCounts[c.appetite] = (tierCounts[c.appetite] || 0) + 1);
+
+      // Compute attractiveness scores per carrier per coverage line
+      const scores = {};
+      gameState.carriers.forEach(c => {
+        scores[c.id] = {};
+        const enabledLines = COVERAGE_LINES.filter(l => c.lines[l.id]);
+        const lineCount = enabledLines.length;
+
+        // Package bonus: 1 line = 0.58x, 2 lines = 0.86x, 3 lines = 1.15x, 4 lines = 1.38x, 5 lines = 1.58x
+        const pkgBonus = lineCount === 0 ? 0 : (0.34 + lineCount * 0.25);
+
+        const deptMetrics = calculateDepartmentMetrics(c);
+        const uwEff = deptMetrics.byDept.uw.effectivenessMult;
+        const salesEff = deptMetrics.byDept.sales.effectivenessMult;
+
+        // Lean staffing slows quote turnaround slightly; High staffing speeds submission handling
+        const salesVolumeMult = STAFFING_POSTURES[c.deptStaffing.sales].ratioMult;
+        const uwVolumeMult = STAFFING_POSTURES[c.deptStaffing.uw].ratioMult;
+
+        const ratingBoost = 1 + c.tech.rating * 0.11;
+        const portalBoost = 1 + c.tech.portal * 0.10;
+
+        const channelReach = (c.channels.direct * 0.88 + c.channels.retail * 1.05 + c.channels.wholesale * 1.32) / 100;
+
+        // Pricing aggression: +20% discounting boosts conversion ~1.68x; -15% conservative cuts conversion ~0.62x
+        const priceConvMult = Math.max(0.45, 1 + c.pricing * 0.034);
+
+        const crowdingCount = tierCounts[c.appetite] || 1;
+        const crowdingMult = crowdingCount <= 1 ? 1.26 : (1 / Math.pow(crowdingCount, 0.36));
+
+        const tierObj = RISK_TIERS.find(t => t.id === c.appetite);
+
+        COVERAGE_LINES.forEach(line => {
+          if (!c.lines[line.id]) {
+            scores[c.id][line.id] = 0;
+            return;
+          }
+          const operationalPower = Math.sqrt((uwEff * uwVolumeMult * ratingBoost) * (salesEff * salesVolumeMult * portalBoost));
+          scores[c.id][line.id] = Math.max(0.1, operationalPower * pkgBonus * channelReach * priceConvMult * crowdingMult * tierObj.volMult);
+        });
+      });
+
+      const totalLineScore = {};
+      COVERAGE_LINES.forEach(line => {
+        totalLineScore[line.id] = gameState.carriers.reduce((sum, c) => sum + scores[c.id][line.id], 0);
+      });
+
+      const specialNews = [];
+
+      // Resolve written cohort, earned premium, losses, expenses, and renewal rollover per carrier
+      gameState.carriers.forEach(c => {
+        const tierObj = RISK_TIERS.find(t => t.id === c.appetite);
+        const enabledLines = COVERAGE_LINES.filter(l => c.lines[l.id]);
+        const lineCount = enabledLines.length;
+        const deptMetrics = calculateDepartmentMetrics(c);
+
+        // Check if any prior cohort just finished its 4 quarters (automatic renewal rollover)
+        const expiredCohorts = c.cohorts.filter(ch => ch.remainingQtrs === 0 && !ch.rolledOver);
+        let renewalPoliciesBoost = 0;
+        expiredCohorts.forEach(ch => {
+          ch.rolledOver = true;
+          // Retention depends on current pricing aggression & portal tech
+          const retentionRate = Math.min(0.92, Math.max(0.45, 0.72 + (c.pricing * 0.008) + (c.tech.portal * 0.03)));
+          renewalPoliciesBoost += Math.round(ch.policies * retentionRate);
+        });
+
+        let newPoliciesWritten = 0;
+        let writtenGwp = 0;
+        let expectedLossDollars = 0;
+
+        if (lineCount > 0) {
+          let totalLineUnits = 0;
+          const crowdingCount = tierCounts[c.appetite] || 1;
+          const crowdingRateDrag = crowdingCount > 2 ? (crowdingCount - 2) * -0.024 : 0.02;
+
+          // Pricing aggression reduces rate adequacy (positive pricing = higher discount)
+          const rateAdequacy = Math.max(0.72, (1 - c.pricing / 100) * macro.rateMult * (1 + crowdingRateDrag));
+
+          COVERAGE_LINES.forEach(line => {
+            if (!c.lines[line.id]) return;
+            const universe = line.universe * macro.volumeMult;
+            const share = scores[c.id][line.id] / (totalLineScore[line.id] + 1.6);
+            const newUnits = Math.round(universe * share * (0.92 + Math.random() * 0.16));
+            const renewalUnits = Math.round((renewalPoliciesBoost / lineCount) * 0.75);
+            const totalUnits = newUnits + renewalUnits;
+
+            const lineGwp = totalUnits * line.avgPrem * rateAdequacy;
+            totalLineUnits += totalUnits;
+            writtenGwp += lineGwp;
+
+            const tierLossFactor = tierObj.baseLoss / 0.60;
+            const telematicsCut = (line.id === "AL" || line.id === "PD") ? (1 - c.tech.telematics * 0.035) : 1.0;
+
+            let lineExpectedLR = (line.baseLR * tierLossFactor * telematicsCut) / rateAdequacy;
+            if (line.id === "AL") lineExpectedLR *= macro.alSeverityMult;
+            if (line.id === "PD") lineExpectedLR *= macro.pdSeverityMult;
+
+            expectedLossDollars += lineGwp * lineExpectedLR;
+          });
+
+          newPoliciesWritten = Math.max(1, Math.round(totalLineUnits / Math.pow(lineCount, 0.66)));
+          writtenGwp = Math.round(writtenGwp);
+        }
+
+        const baseExpectedLR = writtenGwp > 0 ? (expectedLossDollars / writtenGwp) : 0.50;
+
+        if (writtenGwp > 0) {
+          c.cohorts.push({
+            qtrWritten: qIdx,
+            label: periodLabel,
+            policies: newPoliciesWritten,
+            annualGwp: writtenGwp,
+            remainingQtrs: 4,
+            rolledOver: false,
+            baseExpectedLR,
+            earnedTotal: 0,
+            lossTotal: 0
+          });
+        }
+
+        c.cumGwp += writtenGwp;
+
+        // Earn 25% of GWP across active 4-quarter cohorts and roll quarterly losses
+        let earnedPremium = 0;
+        let incurredLosses = 0;
+        let activePolicies = 0;
+
+        const uwEff = deptMetrics.byDept.uw.effectivenessMult;
+        const claimsEff = deptMetrics.byDept.claims.effectivenessMult;
+        const claimsTechCut = 1 - (c.tech.claims * 0.03);
+
+        // Capacity strain penalty if Lean staffing + aggressive growth
+        const isStrained = (c.deptStaffing.uw === "lean" || c.deptStaffing.claims === "lean") && (c.pricing >= 8 || writtenGwp > 4500000);
+        const strainPenalty = isStrained ? 1.09 : 1.0;
+
+        c.cohorts.forEach(ch => {
+          if (ch.remainingQtrs > 0) {
+            const qtrEarn = ch.annualGwp * 0.25;
+            earnedPremium += qtrEarn;
+            activePolicies += ch.policies;
+
+            // Quarterly loss randomness + shock verdict tail risk
+            const normalRng = 0.82 + (Math.random() + Math.random()) * 0.20;
+            let shockMult = 1.0;
+            const shockRoll = Math.random();
+            if (c.lines.AL && shockRoll < 0.065) {
+              shockMult = 1.38 + Math.random() * 0.32;
+              if (c.isUser || c.humanControlled) {
+                specialNews.push(`⚠️ Shock Highway Verdict impacted ${c.name}'s ${ch.label} cohort!`);
+              }
+            } else if (shockRoll > 0.93) {
+              shockMult = 0.74;
+            }
+
+            const skillModifier = (1.16 - uwEff * 0.09 - claimsEff * 0.08) * claimsTechCut * strainPenalty;
+            const qtrLossRatio = Math.max(0.02, ch.baseExpectedLR * normalRng * shockMult * skillModifier);
+            const qtrLoss = qtrEarn * qtrLossRatio;
+
+            incurredLosses += qtrLoss;
+            ch.earnedTotal += qtrEarn;
+            ch.lossTotal += qtrLoss;
+            ch.remainingQtrs -= 1;
+          }
+        });
+
+        // Quarterly Expenses: Dynamic Dept Payroll + R&D Spend + Channel Commissions + Overhead
+        const updatedMetrics = calculateDepartmentMetrics(c);
+        const payrollCost = updatedMetrics.totalPayroll;
+        const techCost = calculateQuarterlyTechSpend(c);
+
+        const blendedCommRate = (c.channels.direct * 0.04 + c.channels.retail * 0.12 + c.channels.wholesale * 0.18) / 100;
+        const finEff = updatedMetrics.byDept.finance.effectivenessMult;
+        const portalSave = 1 - c.tech.portal * 0.025;
+        const acqExpense = earnedPremium * blendedCommRate * portalSave * (1.08 - finEff * 0.08);
+        const baseOverhead = 40000;
+
+        const totalExpenses = Math.round(payrollCost + techCost + acqExpense + baseOverhead);
+        earnedPremium = Math.round(earnedPremium);
+        incurredLosses = Math.round(incurredLosses);
+
+        const lossRatio = earnedPremium > 0 ? (incurredLosses / earnedPremium) * 100 : 0;
+        const expenseRatio = earnedPremium > 0 ? (totalExpenses / earnedPremium) * 100 : 999;
+        const combinedRatio = earnedPremium > 0 ? (lossRatio + expenseRatio) : 999;
+        const uwProfit = earnedPremium - incurredLosses - totalExpenses;
+
+        // Quarterly investment income on surplus (1.1%)
+        const invIncome = c.surplus > 0 ? Math.round(c.surplus * 0.011) : 0;
+        c.surplus += (uwProfit + invIncome);
+
+        c.history.push({
+          qtrIndex: qIdx,
+          period: periodLabel,
+          policiesWritten: newPoliciesWritten,
+          activePolicies,
+          writtenGwp,
+          earnedPremium,
+          incurredLosses,
+          expenses: totalExpenses,
+          lossRatio,
+          expenseRatio,
+          combinedRatio,
+          uwProfit,
+          headcount: updatedMetrics.totalFte
+        });
+      });
+
+      // Push Quarterly Market News Wire entry
+      appendNewsEntry(periodLabel, macro, tierCounts, specialNews);
+    }
+
+    function resolveMacroEnvironment(qIdx) {
+      const presets = {
+        normal: { label: "Normal Market", volumeMult: 1.0, rateMult: 1.0, alSeverityMult: 1.0, pdSeverityMult: 1.0, note: "Freight volumes and loss frequency tracked historical expectations." },
+        hard: { label: "Hard Market Rate Surge", volumeMult: 1.14, rateMult: 1.15, alSeverityMult: 0.98, pdSeverityMult: 1.0, note: "Capacity tightened across commercial trucking—carriers captured +15% rate increases." },
+        verdicts: { label: "Nuclear Verdict Wave", volumeMult: 1.0, rateMult: 1.02, alSeverityMult: 1.38, pdSeverityMult: 1.0, note: "Plaintiff verdicts spiked Auto Liability severity by +38% on major interstate corridors." },
+        recession: { label: "Freight Recession", volumeMult: 0.75, rateMult: 0.94, alSeverityMult: 1.04, pdSeverityMult: 1.0, note: "Spot freight rates slumped, shrinking new trucking submissions by 25%." },
+        hail: { label: "Midwest Cat Hailstorm", volumeMult: 1.0, rateMult: 1.0, alSeverityMult: 1.0, pdSeverityMult: 1.45, note: "Severe Midwest hail hammered Physical Damage cohorts (+45% PD losses)." }
+      };
+
+      if (gameState.macroOverride !== "auto" && presets[gameState.macroOverride]) {
+        const chosen = presets[gameState.macroOverride];
+        gameState.macroOverride = "auto";
+        const sel = document.getElementById("macroSelect");
+        if (sel) sel.value = "auto";
+        return chosen;
+      }
+
+      if (qIdx === 1) return presets.normal;
+      const r = Math.random();
+      if (r < 0.42) return presets.normal;
+      if (r < 0.62) return presets.hard;
+      if (r < 0.78) return presets.verdicts;
+      if (r < 0.90) return presets.recession;
+      return presets.hail;
+    }
+
+    function appendNewsEntry(periodLabel, macro, tierCounts, specialNews) {
+      let crowded = { label: "", count: 0 };
+      let openNiche = { label: "", count: 99 };
+      RISK_TIERS.forEach(t => {
+        const cnt = tierCounts[t.id] || 0;
+        if (cnt > crowded.count) crowded = { label: t.label, count: cnt };
+        if (cnt < openNiche.count) openNiche = { label: t.label, count: cnt };
+      });
+
+      const byCr = [...gameState.carriers].sort((a, b) => a.history[a.history.length - 1].combinedRatio - b.history[b.history.length - 1].combinedRatio);
+      const bestCr = byCr[0];
+      const bestCrVal = bestCr.history[bestCr.history.length - 1].combinedRatio;
+
+      const byGwp = [...gameState.carriers].sort((a, b) => b.history[b.history.length - 1].writtenGwp - a.history[a.history.length - 1].writtenGwp);
+      const topGwp = byGwp[0];
+      const topGwpVal = topGwp.history[topGwp.history.length - 1].writtenGwp;
+
+      gameState.news.unshift({
+        period: periodLabel,
+        macroLabel: macro.label,
+        macroNote: macro.note,
+        crowdingNote: `${crowded.count} carriers chased ${crowded.label} (softening rates), while ${openNiche.label} had ${openNiche.count} carrier(s).`,
+        leadersNote: `Top GWP: ${topGwp.name} (${fmtCompact(topGwpVal)}) • Best Combined: ${bestCr.name} (${bestCrVal.toFixed(1)}%).`,
+        specials: specialNews
+      });
+    }
+
+    // =========================================================================
+    // 5. UI INTERACTION HANDLERS
+    // =========================================================================
+    function getUser() {
+      return gameState.carriers.find(c => c.isUser);
+    }
+
+    function switchTab(tab) {
+      ["ceo", "map", "commish"].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.className = "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition bg-blue-600 text-white shadow-sm";
+        } else {
+          const clr = t === "commish" ? "text-amber-300" : "text-slate-300";
+          btn.className = `px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${clr} hover:bg-slate-800 flex items-center gap-1.5`;
+        }
+      });
+      if (tab === "map") renderMarketAndMap();
+      if (tab === "commish") renderCommissionerPanel();
+    }
+
+    function updateIdentity() {
+      const u = getUser();
+      u.ceo = document.getElementById("ceoNameInput").value.trim() || "Scott Slezak";
+      u.name = document.getElementById("companyNameInput").value.trim() || "Heartland Haulers Mutual";
+      u.city = document.getElementById("hqCitySelect").value;
+      renderMarketAndMap();
+      renderCommissionerPanel();
+    }
+
+    function adjustChannels(changed) {
+      const u = getUser();
+      let d = parseInt(document.getElementById("sliderDirect").value, 10);
+      let r = parseInt(document.getElementById("sliderRetail").value, 10);
+      let w = parseInt(document.getElementById("sliderWholesale").value, 10);
+
+      const rem = 100 - (changed === "direct" ? d : changed === "retail" ? r : w);
+      if (changed === "direct") {
+        const s = r + w;
+        if (s === 0) { r = Math.floor(rem / 2); w = rem - r; }
+        else { r = Math.round((r / s) * rem); w = rem - r; }
+      } else if (changed === "retail") {
+        const s = d + w;
+        if (s === 0) { d = Math.floor(rem / 2); w = rem - d; }
+        else { d = Math.round((d / s) * rem); w = rem - d; }
+      } else {
+        const s = d + r;
+        if (s === 0) { d = Math.floor(rem / 2); r = rem - d; }
+        else { d = Math.round((d / s) * rem); r = rem - d; }
+      }
+
+      u.channels = { direct: d, retail: r, wholesale: w };
+      document.getElementById("sliderDirect").value = d;
+      document.getElementById("sliderRetail").value = r;
+      document.getElementById("sliderWholesale").value = w;
+      document.getElementById("valDirect").textContent = `${d}%`;
+      document.getElementById("valRetail").textContent = `${r}%`;
+      document.getElementById("valWholesale").textContent = `${w}%`;
+    }
+
+    function updatePricingUI() {
+      const u = getUser();
+      const val = parseInt(document.getElementById("sliderPricing").value, 10);
+      u.pricing = val;
+
+      const badge = document.getElementById("pricingBadge");
+      const note = document.getElementById("pricingNote");
+
+      if (val <= -8) {
+        badge.textContent = `${val}% Conservative / Hard`;
+        badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        note.textContent = "Disciplined rate surcharge: lower policy volume, strong margin protection against shock losses.";
+      } else if (val < 0) {
+        badge.textContent = `${val}% Firm Pricing`;
+        badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30";
+        note.textContent = "Slightly firmer rates than market average: prioritizes underwriting profit over raw top-line speed.";
+      } else if (val === 0) {
+        badge.textContent = "0% Market Rate";
+        badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-200";
+        note.textContent = "Neutral market pricing: standard hit-rate and baseline rate adequacy.";
+      } else if (val <= 10) {
+        badge.textContent = `+${val}% Growth Discount`;
+        badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        note.textContent = "Competitive discounting accelerates policy count while compressing underwriting margin.";
+      } else {
+        badge.textContent = `+${val}% Ultra-Aggressive`;
+        badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+        note.textContent = "Heavy rate cutting drives rapid GWP growth but severely erodes rate adequacy & Loss Ratio.";
+      }
+    }
+
+    function setAppetite(id) {
+      getUser().appetite = id;
+      renderCeoStrategyPanels();
+    }
+
+    function toggleLine(id) {
+      const u = getUser();
+      u.lines[id] = !u.lines[id];
+      renderCeoStrategyPanels();
+    }
+
+    function setDeptPay(deptId, payKey) {
+      getUser().deptPay[deptId] = payKey;
+      renderCeoStaffAndTech();
+      renderTopKpis();
+    }
+
+    function setDeptStaffing(deptId, staffKey) {
+      getUser().deptStaffing[deptId] = staffKey;
+      renderCeoStaffAndTech();
+      renderTopKpis();
+    }
+
+    function setTechTier(pillarId, lvl) {
+      getUser().tech[pillarId] = lvl;
+      renderCeoStaffAndTech();
+      renderTopKpis();
+    }
+
+    // =========================================================================
+    // 6. RENDERING PIPELINE
+    // =========================================================================
+    function renderAll() {
+      renderTopKpis();
+      renderCeoStrategyPanels();
+      renderCeoStaffAndTech();
+      renderCohortsAndNews();
+      renderMarketAndMap();
+      renderCommissionerPanel();
+    }
+
+    function renderTopKpis() {
+      const q = gameState.quarter;
+      const periodEl = document.getElementById("periodDisplay");
+      if (q === 0) {
+        periodEl.textContent = "Year 0 • Pre-Q1 Setup";
+      } else {
+        const y = Math.ceil(q / 4);
+        const qInY = ((q - 1) % 4) + 1;
+        periodEl.textContent = `Year ${y} • Q${qInY} (Quarter ${q})`;
+      }
+
+      const cycleEl = document.getElementById("marketCycleBadge");
+      cycleEl.textContent = gameState.marketCycle;
+      if (gameState.marketCycle.includes("Verdict") || gameState.marketCycle.includes("Hail") || gameState.marketCycle.includes("Recession")) {
+        cycleEl.className = "px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 font-medium";
+      } else if (gameState.marketCycle.includes("Hard")) {
+        cycleEl.className = "px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium";
+      } else {
+        cycleEl.className = "px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-medium";
+      }
+
+      const u = getUser();
+      const sorted = [...gameState.carriers].sort((a, b) => b.surplus - a.surplus);
+      const rank = sorted.findIndex(c => c.isUser) + 1;
+      document.getElementById("kpiRank").textContent = `#${rank} of 10 Carriers`;
+
+      const surplusStr = fmtCompact(u.surplus);
+      document.getElementById("kpiSurplus").textContent = surplusStr;
+      document.getElementById("headerSurplusDisplay").textContent = surplusStr;
+
+      const staffMetrics = calculateDepartmentMetrics(u);
+      document.getElementById("kpiHeadcount").textContent = `${staffMetrics.totalFte} FTEs`;
+      document.getElementById("kpiPayrollSummary").textContent = `Payroll: ${fmtCompact(staffMetrics.totalPayroll)}/qtr`;
+
+      if (u.history.length === 0) {
+        document.getElementById("kpiQtrGwp").textContent = "$0";
+        document.getElementById("kpiTrailingGwp").textContent = "Trailing 4Q: $0";
+        document.getElementById("kpiEarned").textContent = "$0";
+        document.getElementById("kpiLossRatio").textContent = "—";
+        document.getElementById("kpiLossDollars").textContent = "Losses: $0";
+        document.getElementById("kpiExpenseRatio").textContent = "—";
+        document.getElementById("kpiExpenseDollars").textContent = "Expenses: $0";
+        document.getElementById("kpiCombinedRatio").textContent = "—";
+        document.getElementById("kpiUwProfit").textContent = "$0";
+        document.getElementById("kpiSurplusDelta").textContent = "vs Start: $0";
+        document.getElementById("kpiPolicies").textContent = "0";
+        document.getElementById("kpiNewPolicies").textContent = "Last Qtr New: 0";
+        return;
+      }
+
+      const last = u.history[u.history.length - 1];
+      const trailing4Q = u.history.slice(-4).reduce((s, h) => s + h.writtenGwp, 0);
+
+      document.getElementById("kpiQtrGwp").textContent = fmtCompact(last.writtenGwp);
+      document.getElementById("kpiTrailingGwp").textContent = `Trailing 4Q: ${fmtCompact(trailing4Q)}`;
+      document.getElementById("kpiEarned").textContent = fmtCompact(last.earnedPremium);
+
+      const lrEl = document.getElementById("kpiLossRatio");
+      lrEl.textContent = `${last.lossRatio.toFixed(1)}%`;
+      lrEl.className = `text-base font-extrabold mt-0.5 ${last.lossRatio <= 62 ? "text-emerald-400" : last.lossRatio <= 72 ? "text-amber-400" : "text-rose-400"}`;
+      document.getElementById("kpiLossDollars").textContent = `Losses: ${fmtCompact(last.incurredLosses)}`;
+
+      const erEl = document.getElementById("kpiExpenseRatio");
+      erEl.textContent = `${last.expenseRatio > 500 ? ">500" : last.expenseRatio.toFixed(1)}%`;
+      erEl.className = `text-base font-extrabold mt-0.5 ${last.expenseRatio <= 32 ? "text-emerald-400" : last.expenseRatio <= 42 ? "text-amber-400" : "text-rose-400"}`;
+      document.getElementById("kpiExpenseDollars").textContent = `Expenses: ${fmtCompact(last.expenses)}`;
+
+      const crEl = document.getElementById("kpiCombinedRatio");
+      crEl.textContent = `${last.combinedRatio > 500 ? ">500" : last.combinedRatio.toFixed(1)}%`;
+      crEl.className = `text-base font-extrabold mt-0.5 ${last.combinedRatio < 96 ? "text-emerald-400" : last.combinedRatio <= 102 ? "text-amber-400" : "text-rose-400"}`;
+
+      const uwEl = document.getElementById("kpiUwProfit");
+      uwEl.textContent = `${last.uwProfit >= 0 ? "+" : ""}${fmtCompact(last.uwProfit)}`;
+      uwEl.className = `text-base font-extrabold mt-0.5 ${last.uwProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`;
+
+      const sDelta = u.surplus - 10000000;
+      document.getElementById("kpiSurplusDelta").textContent = `vs Start: ${sDelta >= 0 ? "+" : ""}${fmtCompact(sDelta)}`;
+
+      document.getElementById("kpiPolicies").textContent = last.activePolicies.toLocaleString();
+      document.getElementById("kpiNewPolicies").textContent = `Last Qtr New: ${last.policiesWritten.toLocaleString()}`;
+    }
+
+    function renderCeoStrategyPanels() {
+      const u = getUser();
+
+      // Appetite Tiers
+      document.getElementById("appetiteOptions").innerHTML = RISK_TIERS.map(t => {
+        const active = u.appetite === t.id;
+        return `
+          <div onclick="setAppetite('${t.id}')" class="p-2.5 rounded-xl border cursor-pointer transition ${active ? "bg-blue-600/15 border-blue-500" : "bg-slate-950 border-slate-800 hover:border-slate-700"}">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold ${active ? "text-white" : "text-slate-300"}">${t.label}</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"}">Base LR ~${Math.round(t.baseLoss * 100)}%</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5 leading-snug">${t.desc}</p>
+          </div>
+        `;
+      }).join("");
+
+      // Coverage Lines
+      const enabledCount = COVERAGE_LINES.filter(l => u.lines[l.id]).length;
+      const pkgMult = enabledCount === 0 ? 0 : (0.34 + enabledCount * 0.25);
+      const pkgBadge = document.getElementById("packageBadge");
+      pkgBadge.textContent = `${pkgMult.toFixed(2)}x Package Bonus`;
+      pkgBadge.className = `text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${enabledCount >= 3 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : enabledCount === 0 ? "bg-rose-500/20 text-rose-300" : "bg-amber-500/20 text-amber-300"}`;
+
+      document.getElementById("coverageLinesContainer").innerHTML = COVERAGE_LINES.map(l => {
+        const on = u.lines[l.id];
+        return `
+          <label class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition ${on ? "bg-slate-950 border-blue-500/60" : "bg-slate-950/50 border-slate-800 opacity-65 hover:opacity-100"}">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" ${on ? "checked" : ""} onchange="toggleLine('${l.id}')" class="w-4 h-4 rounded accent-blue-600" />
+              <div>
+                <div class="text-xs font-bold text-slate-100">${l.name}</div>
+                <div class="text-[10px] text-slate-400">${l.tag} • Avg ${fmtMoney(l.avgPrem)}</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">Pool: ${l.universe}/qtr</span>
+          </label>
+        `;
+      }).join("");
+
+      // GL Trap Alert
+      const onlySmallLines = enabledCount > 0 && !u.lines.AL && !u.lines.PD && !u.lines.CARGO;
+      document.getElementById("glTrapAlert").classList.toggle("hidden", !onlySmallLines);
+    }
+
+    function renderCeoStaffAndTech() {
+      const u = getUser();
+      const metrics = calculateDepartmentMetrics(u);
+
+      document.getElementById("liveStaffSummaryBadge").textContent = `${metrics.totalFte} FTEs • ${fmtCompact(metrics.totalPayroll)}/qtr`;
+
+      document.getElementById("staffingMatrixContainer").innerHTML = DEPARTMENTS.map(dept => {
+        const dStat = metrics.byDept[dept.id];
+        const payVal = u.deptPay[dept.id];
+        const staffVal = u.deptStaffing[dept.id];
+
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-extrabold text-white">${dept.name}</span>
+                <span class="text-[10px] text-slate-400 ml-1.5">• ${dept.role}</span>
+              </div>
+              <div class="text-right text-[11px] font-bold">
+                <span class="text-indigo-400">${dStat.fte} FTE</span>
+                <span class="text-slate-500 mx-1">|</span>
+                <span class="${dStat.effectivenessPct >= 110 ? "text-emerald-400" : dStat.effectivenessPct < 88 ? "text-rose-400" : "text-slate-300"}">${dStat.effectivenessPct}% Eff</span>
+                <span class="text-slate-500 mx-1">|</span>
+                <span class="text-slate-300">${fmtCompact(dStat.deptPayroll)}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <!-- Pay Level 3-State Toggle -->
+              <div>
+                <div class="text-[9px] uppercase font-bold text-slate-500 mb-1">Pay Level</div>
+                <div class="grid grid-cols-3 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                  ${["low", "mid", "high"].map(k => `
+                    <button onclick="setDeptPay('${dept.id}', '${k}')" class="py-1 rounded-md text-[10px] font-bold transition ${payVal === k ? "bg-blue-600 text-white" : "text-slate-400 hover:text-slate-200"}">
+                      ${PAY_LEVELS[k].label}
+                    </button>
+                  `).join("")}
+                </div>
+              </div>
+
+              <!-- Staffing Posture 3-State Toggle -->
+              <div>
+                <div class="text-[9px] uppercase font-bold text-slate-500 mb-1">Staffing Ratio</div>
+                <div class="grid grid-cols-3 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                  ${["lean", "avg", "high"].map(k => `
+                    <button onclick="setDeptStaffing('${dept.id}', '${k}')" class="py-1 rounded-md text-[10px] font-bold transition ${staffVal === k ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}">
+                      ${k === "avg" ? "Avg" : STAFFING_POSTURES[k].label}
+                    </button>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Capacity strain indicator
+      const hasLeanOrLow = Object.values(u.deptStaffing).includes("lean") || Object.values(u.deptPay).includes("low");
+      document.getElementById("capacityStrainWarning").classList.toggle("hidden", !hasLeanOrLow);
+
+      // Tech & R&D Pillars
+      const techTotal = calculateQuarterlyTechSpend(u);
+      document.getElementById("liveTechSpendBadge").textContent = `${fmtCompact(techTotal)} / qtr`;
+
+      document.getElementById("techPillarsContainer").innerHTML = TECH_PILLARS.map(p => {
+        const curLvl = u.tech[p.id];
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div class="text-xs font-bold text-slate-100">${p.name}</div>
+              <div class="text-[10px] text-slate-400">${p.impact} • ${fmtCompact(p.baseCost * TECH_TIERS[curLvl].mult)}/qtr</div>
+            </div>
+            <div class="grid grid-cols-4 bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0">
+              ${TECH_TIERS.map(t => `
+                <button onclick="setTechTier('${p.id}', ${t.lvl})" class="px-2 py-1 rounded-md text-[10px] font-bold transition ${curLvl === t.lvl ? "bg-blue-600 text-white" : "text-slate-400 hover:text-slate-200"}">
+                  ${t.label}
+                </button>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCohortsAndNews() {
+      const u = getUser();
+
+      // News Feed
+      const newsEl = document.getElementById("newsFeedContainer");
+      if (gameState.news.length > 0) {
+        newsEl.innerHTML = gameState.news.map(n => `
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-white">${n.period} Recap</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">${n.macroLabel}</span>
+            </div>
+            <p class="text-slate-300">${n.macroNote}</p>
+            <p class="text-slate-400">${n.crowdingNote}</p>
+            <p class="font-semibold text-emerald-400">${n.leadersNote}</p>
+            ${n.specials.map(s => `<p class="text-rose-400 font-semibold">${s}</p>`).join("")}
+          </div>
+        `).join("");
+      }
+
+      // Cohorts & Quarterly Table
+      const tbody = document.getElementById("cohortTableBody");
+      if (u.history.length === 0) return;
+
+      tbody.innerHTML = [...u.history].reverse().map(row => {
+        const cohort = u.cohorts.find(c => c.qtrWritten === row.qtrIndex);
+        const rem = cohort ? cohort.remainingQtrs : 0;
+        const statusHtml = rem > 0
+          ? `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold text-[10px]">Earning (${rem}Q left)</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold text-[10px]">Rolled to Renewal</span>`;
+
+        const crClass = row.combinedRatio < 96 ? "text-emerald-400 font-bold" : row.combinedRatio <= 102 ? "text-amber-400 font-bold" : "text-rose-400 font-bold";
+        const profClass = row.uwProfit >= 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+
+        return `
+          <tr class="hover:bg-slate-800/50">
+            <td class="py-2.5 px-2 font-extrabold text-white">${row.period}</td>
+            <td class="py-2.5 px-2 text-right">${row.policiesWritten.toLocaleString()}</td>
+            <td class="py-2.5 px-2 text-right font-semibold text-slate-200">${fmtMoney(row.writtenGwp)}</td>
+            <td class="py-2.5 px-2 text-right">${fmtMoney(row.earnedPremium)}</td>
+            <td class="py-2.5 px-2 text-right">${fmtMoney(row.incurredLosses)}</td>
+            <td class="py-2.5 px-2 text-right">${row.lossRatio.toFixed(1)}%</td>
+            <td class="py-2.5 px-2 text-right">${row.expenseRatio > 500 ? ">500%" : row.expenseRatio.toFixed(1) + "%"}</td>
+            <td class="py-2.5 px-2 text-right ${crClass}">${row.combinedRatio > 500 ? ">500%" : row.combinedRatio.toFixed(1) + "%"}</td>
+            <td class="py-2.5 px-2 text-right ${profClass}">${row.uwProfit >= 0 ? "+" : ""}${fmtMoney(row.uwProfit)}</td>
+            <td class="py-2.5 px-2 text-center">${statusHtml}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderMarketAndMap() {
+      // Map Pins
+      const pinsLayer = document.getElementById("mapPinsLayer");
+      pinsLayer.innerHTML = gameState.carriers.map(c => {
+        const coords = US_CITIES.find(city => city.label === c.city) || { x: 400, y: 220 };
+        const sel = gameState.selectedMapCarrierId === c.id;
+        const fill = c.isUser ? "#3b82f6" : "#f59e0b";
+        const r = sel ? 10 : (c.isUser ? 9 : 7);
+
+        return `
+          <g class="map-pin" onclick="selectCarrierOnMap('${c.id}')">
+            ${sel ? `<circle cx="${coords.x}" cy="${coords.y}" r="16" fill="${fill}" fill-opacity="0.28" />` : ""}
+            <circle cx="${coords.x}" cy="${coords.y}" r="${r}" fill="${fill}" stroke="${sel ? "#ffffff" : "#020617"}" stroke-width="2.5" />
+            <text x="${coords.x}" y="${coords.y - 12}" text-anchor="middle" fill="#f8fafc" font-size="10" font-weight="700" style="text-shadow: 0 1px 3px #000;">
+              ${c.isUser ? "★ " + c.name.split(" ")[0] : c.name.split(" ")[0]}
+            </text>
+          </g>
+        `;
+      }).join("");
+
+      // Selected Competitor Public Filing Card
+      const selCarrier = gameState.carriers.find(c => c.id === gameState.selectedMapCarrierId) || getUser();
+      const last = selCarrier.history[selCarrier.history.length - 1];
+      const fte = calculateDepartmentMetrics(selCarrier).totalFte;
+
+      document.getElementById("competitorIntelCard").innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${selCarrier.isUser ? "bg-blue-500/20 text-blue-300" : "bg-amber-500/20 text-amber-300"}">
+                ${selCarrier.isUser ? "Your Carrier HQ" : "Competitor Public Filing"}
+              </span>
+              <h3 class="text-base font-extrabold text-white mt-1">${selCarrier.name}</h3>
+              <p class="text-xs text-slate-400">CEO: <strong class="text-slate-200">${selCarrier.ceo}</strong> • HQ: <strong class="text-slate-200">${selCarrier.city}</strong></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div class="text-[10px] font-bold uppercase text-slate-400">Surplus</div>
+              <div class="text-sm font-extrabold text-emerald-400">${fmtCompact(selCarrier.surplus)}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div class="text-[10px] font-bold uppercase text-slate-400">Cumul. GWP</div>
+              <div class="text-sm font-extrabold text-white">${fmtCompact(selCarrier.cumGwp)}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div class="text-[10px] font-bold uppercase text-slate-400">Combined Ratio</div>
+              <div class="text-sm font-extrabold ${!last ? "text-slate-300" : last.combinedRatio < 96 ? "text-emerald-400" : "text-rose-400"}">
+                ${last ? (last.combinedRatio > 500 ? ">500%" : last.combinedRatio.toFixed(1) + "%") : "—"}
+              </div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+              <div class="text-[10px] font-bold uppercase text-slate-400">Headcount</div>
+              <div class="text-sm font-extrabold text-indigo-400">${fte} FTEs</div>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+            <div class="flex justify-between"><span class="text-slate-400">Active Channels:</span> <span class="font-semibold text-slate-200">${formatChannelsPublic(selCarrier.channels)}</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Pay, Staffing &amp; R&amp;D:</span> <span class="italic text-slate-500">${selCarrier.isUser ? "Visible on CEO Dashboard" : "Confidential"}</span></div>
+          </div>
+        </div>
+      `;
+
+      // Market Share & Combined Ratio Comparison Bars
+      const totalMarketGwp = Math.max(1, gameState.carriers.reduce((s, c) => s + c.cumGwp, 0));
+      const byGwp = [...gameState.carriers].sort((a, b) => b.cumGwp - a.cumGwp);
+
+      document.getElementById("marketComparisonChart").innerHTML = byGwp.map(c => {
+        const sharePct = gameState.quarter === 0 ? 10 : (c.cumGwp / totalMarketGwp) * 100;
+        const l = c.history[c.history.length - 1];
+        const crText = l ? `${l.combinedRatio > 500 ? ">500" : l.combinedRatio.toFixed(1)}% CR` : "Pre-Q1";
+        return `
+          <div class="text-[11px]">
+            <div class="flex justify-between mb-0.5">
+              <span class="${c.isUser ? "font-extrabold text-blue-400" : "font-semibold text-slate-300"}">${c.name}</span>
+              <span class="text-slate-400">${sharePct.toFixed(1)}% share • <strong class="text-slate-200">${crText}</strong></span>
+            </div>
+            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+              <div class="h-full ${c.isUser ? "bg-blue-500" : "bg-amber-500/80"}" style="width: ${Math.min(100, Math.max(4, sharePct * 2.5))}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Sortable Leaderboard
+      const sortMode = document.getElementById("leaderboardSortSelect").value;
+      const sorted = [...gameState.carriers].sort((a, b) => {
+        const la = a.history[a.history.length - 1];
+        const lb = b.history[b.history.length - 1];
+        if (sortMode === "gwp") return b.cumGwp - a.cumGwp;
+        if (sortMode === "combined") {
+          const ca = la ? la.combinedRatio : 9999;
+          const cb = lb ? lb.combinedRatio : 9999;
+          return ca - cb;
+        }
+        if (sortMode === "uwProfit") {
+          const pa = la ? la.uwProfit : 0;
+          const pb = lb ? lb.uwProfit : 0;
+          return pb - pa;
+        }
+        return b.surplus - a.surplus;
+      });
+
+      document.getElementById("leaderboardBody").innerHTML = sorted.map((c, i) => {
+        const l = c.history[c.history.length - 1];
+        const fte = calculateDepartmentMetrics(c).totalFte;
+        const cr = l ? l.combinedRatio : null;
+        const crCls = cr === null ? "text-slate-400" : cr < 96 ? "text-emerald-400 font-bold" : cr <= 102 ? "text-amber-400 font-bold" : "text-rose-400 font-bold";
+        const prof = l ? l.uwProfit : 0;
+
+        return `
+          <tr onclick="selectCarrierOnMap('${c.id}')" class="cursor-pointer transition ${c.isUser ? "bg-blue-950/40 hover:bg-blue-900/40" : "hover:bg-slate-800/50"}">
+            <td class="py-2.5 px-2 font-extrabold text-slate-300">#${i + 1}</td>
+            <td class="py-2.5 px-2">
+              <div class="font-bold text-white">${c.name} ${c.isUser ? '<span class="ml-1 text-[9px] px-1.5 py-0.2 bg-blue-600 text-white rounded font-extrabold">YOU</span>' : ""}</div>
+              <div class="text-[10px] text-slate-400">${c.ceo}</div>
+            </td>
+            <td class="py-2.5 px-2 text-slate-300">${c.city}</td>
+            <td class="py-2.5 px-2 text-slate-300">${formatChannelsPublic(c.channels)}</td>
+            <td class="py-2.5 px-2 text-right font-semibold text-indigo-300">${fte}</td>
+            <td class="py-2.5 px-2 text-right">${l ? l.activePolicies.toLocaleString() : "0"}</td>
+            <td class="py-2.5 px-2 text-right font-semibold text-white">${fmtCompact(c.cumGwp)}</td>
+            <td class="py-2.5 px-2 text-right">${l ? l.lossRatio.toFixed(1) + "%" : "—"}</td>
+            <td class="py-2.5 px-2 text-right">${l ? (l.expenseRatio > 500 ? ">500%" : l.expenseRatio.toFixed(1) + "%") : "—"}</td>
+            <td class="py-2.5 px-2 text-right ${crCls}">${cr !== null ? (cr > 500 ? ">500%" : cr.toFixed(1) + "%") : "—"}</td>
+            <td class="py-2.5 px-2 text-right font-semibold ${prof >= 0 ? "text-emerald-400" : "text-rose-400"}">${l ? (prof >= 0 ? "+" : "") + fmtCompact(prof) : "—"}</td>
+            <td class="py-2.5 px-2 text-right font-extrabold text-white">${fmtCompact(c.surplus)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function selectCarrierOnMap(id) {
+      gameState.selectedMapCarrierId = id;
+      renderMarketAndMap();
+    }
+
+    function renderCommissionerPanel() {
+      document.getElementById("commishTableBody").innerHTML = gameState.carriers.map(c => {
+        const linesStr = COVERAGE_LINES.filter(l => c.lines[l.id]).map(l => l.id).join("/") || "None";
+        const payStr = `${c.deptPay.uw[0].toUpperCase()}/${c.deptPay.claims[0].toUpperCase()}/${c.deptPay.sales[0].toUpperCase()}/${c.deptPay.finance[0].toUpperCase()}`;
+        const staffStr = `${c.deptStaffing.uw}/${c.deptStaffing.claims}/${c.deptStaffing.sales}/${c.deptStaffing.finance}`;
+        const fte = calculateDepartmentMetrics(c).totalFte;
+        const l = c.history[c.history.length - 1];
+        const cr = l ? l.combinedRatio : null;
+        const tierLabel = RISK_TIERS.find(t => t.id === c.appetite)?.label || c.appetite;
+
+        return `
+          <tr class="${c.isUser ? "bg-blue-950/35" : "hover:bg-slate-800/50"}">
+            <td class="py-2.5 px-2">
+              <div class="font-bold text-white">${c.name}</div>
+              <div class="text-[10px] text-slate-400">${c.ceo} • ${c.city}</div>
+            </td>
+            <td class="py-2.5 px-2 text-slate-300">${c.archetype}</td>
+            <td class="py-2.5 px-2 font-mono text-[11px] text-slate-300">${c.channels.direct}/${c.channels.retail}/${c.channels.wholesale}</td>
+            <td class="py-2.5 px-2 font-bold ${c.pricing > 0 ? "text-amber-300" : c.pricing < 0 ? "text-emerald-300" : "text-slate-300"}">${c.pricing > 0 ? "+" : ""}${c.pricing}%</td>
+            <td class="py-2.5 px-2">
+              <div class="font-semibold text-slate-200">${tierLabel}</div>
+              <div class="text-[10px] text-slate-400">${linesStr}</div>
+            </td>
+            <td class="py-2.5 px-2 font-mono font-bold text-blue-300">${payStr}</td>
+            <td class="py-2.5 px-2 text-slate-300 capitalize">${staffStr}</td>
+            <td class="py-2.5 px-2 text-right font-bold text-indigo-300">${fte}</td>
+            <td class="py-2.5 px-2 text-right font-bold ${cr === null ? "text-slate-400" : cr < 96 ? "text-emerald-400" : "text-rose-400"}">${cr !== null ? (cr > 500 ? ">500%" : cr.toFixed(1) + "%") : "—"}</td>
+            <td class="py-2.5 px-2 text-right font-extrabold text-white">${fmtCompact(c.surplus)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // =========================================================================
+    // 7. HELPERS & RESET
+    // =========================================================================
+    function formatChannelsPublic(ch) {
+      const active = [];
+      if (ch.direct >= 15) active.push(`Direct ${ch.direct}%`);
+      if (ch.retail >= 15) active.push(`Retail ${ch.retail}%`);
+      if (ch.wholesale >= 15) active.push(`Whsl ${ch.wholesale}%`);
+      return active.join(" • ") || "Multi-Channel";
+    }
+
+    function fmtMoney(n) {
+      const sign = n < 0 ? "-" : "";
+      return sign + "$" + Math.abs(Math.round(n)).toLocaleString();
+    }
+
+    function fmtCompact(n) {
+      const sign = n < 0 ? "-" : "";
+      const abs = Math.abs(n);
+      if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(2)}M`;
+      if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(0)}K`;
+      return `${sign}$${Math.round(abs)}`;
+    }
+
+    let toastTimer = null;
+    function showToast(msg, type = "success") {
+      const banner = document.getElementById("toastBanner");
+      const dot = document.getElementById("toastDot");
+      document.getElementById("toastText").textContent = msg;
+      dot.className = `w-2.5 h-2.5 rounded-full shrink-0 ${type === "success" ? "bg-emerald-400" : "bg-amber-400"}`;
+      banner.classList.remove("hidden");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => banner.classList.add("hidden"), 3600);
+    }
+
+    function resetSeason() {
+      gameState = initGameState();
+      document.getElementById("ceoNameInput").value = "Scott Slezak";
+      document.getElementById("companyNameInput").value = "Heartland Haulers Mutual";
+      document.getElementById("hqCitySelect").value = "Omaha, NE";
+      document.getElementById("sliderDirect").value = 30;
+      document.getElementById("sliderRetail").value = 45;
+      document.getElementById("sliderWholesale").value = 25;
+      adjustChannels("direct");
+      document.getElementById("sliderPricing").value = 0;
+      updatePricingUI();
+      document.getElementById("cohortTableBody").innerHTML = `<tr><td colspan="10" class="py-10 text-center text-slate-500">No quarters simulated yet. Click <strong class="text-slate-300">Run Quarter</strong> to begin Year 1 Q1.</td></tr>`;
+      document.getElementById("newsFeedContainer").innerHTML = `<div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300"><span class="font-bold text-blue-400">Year 0 Pre-Launch:</span> Configure your channels, pricing aggression, risk appetite, coverage lines, staffing posture, and R&amp;D tiers above—then click <strong class="text-white">Run Quarter</strong> to write Q1 policies.</div>`;
+      renderAll();
+      showToast("Season reset to Year 0 Pre-Q1.", "warn");
+    }
+
+    window.onload = function () {
+      const citySel = document.getElementById("hqCitySelect");
+      citySel.innerHTML = US_CITIES.map(c => `<option value="${c.label}" ${c.label === "Omaha, NE" ? "selected" : ""}>${c.label}</option>`).join("");
+      gameState = initGameState();
+      updatePricingUI();
+      renderAll();
+    };
+  </script>
+<!-- ===================== MULTIPLAYER ADD-ON (PeerJS, host-authoritative) ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
+<div id="mpLobby" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-sm items-center justify-center p-4" style="display:none;">
+  <div id="mpLobbyCard" class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6"></div>
+</div>
+
+<script>
+// =========================================================================
+// 8. MULTIPLAYER: rooms over the free public PeerJS broker.
+//    Host-authoritative: the room creator's browser runs simulateSingleQuarter()
+//    for all 10 carriers and broadcasts the resulting gameState. Joiners send
+//    only their decision object (channels/pricing/appetite/lines/pay/staffing/tech).
+// =========================================================================
+(function () {
+  "use strict";
+
+  const MP = {
+    active: false, role: null, room: null, peer: null,
+    conns: {}, hostConn: null, myCarrierId: null,
+    players: [], started: false, locked: false,
+    myName: "", myCarrierName: "",
+    lastHostSeen: 0, hbTimer: null
+  };
+  window.MP = MP;
+
+  const MP_PREFIX = "trucktycoon26-";
+  const MP_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+  function mpEsc(s) {
+    return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function mpMakeRoom() {
+    let s = "";
+    for (let i = 0; i < 4; i++) s += MP_CHARS[Math.floor(Math.random() * MP_CHARS.length)];
+    return s;
+  }
+  function mpRoomFromUrl() {
+    const m = location.search.match(/[?&]room=([A-Za-z0-9]{4})/i);
+    return m ? m[1].toUpperCase() : null;
+  }
+  function mpShareLink() {
+    return location.origin + location.pathname + "?room=" + MP.room;
+  }
+  function mpInputCls() {
+    return "w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
+  }
+
+  // ---------------- Lobby UI ----------------
+  function mpShowLobby() { document.getElementById("mpLobby").style.display = "flex"; }
+  function mpCloseLobby() { document.getElementById("mpLobby").style.display = "none"; }
+
+  function mpRosterChipsHtml() {
+    return MP.players.map(p => {
+      const state = !p.connected ? '<span class="text-slate-500">left - AI takes over</span>'
+        : p.isHost ? '<span class="text-amber-300">HOST</span>'
+        : p.locked ? '<span class="text-emerald-300">&#10003; locked</span>'
+        : '<span class="text-slate-400">&hellip;deciding</span>';
+      return `<div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+        <span class="text-xs font-bold text-slate-200">${mpEsc(p.name)} <span class="text-slate-500 font-semibold">(${mpEsc(p.carrierName || "")})</span></span>
+        <span class="text-[11px] font-bold">${state}</span>
+      </div>`;
+    }).join("");
+  }
+
+  window.mpRenderLobby = function (phase, errMsg) {
+    const card = document.getElementById("mpLobbyCard");
+    if (phase === "entry") {
+      const prefill = mpRoomFromUrl() || "";
+      card.innerHTML = `
+        <div class="text-center mb-4">
+          <div class="text-2xl font-extrabold text-white tracking-tight">TRUCK INSURANCE TYCOON</div>
+          <div class="text-[11px] font-bold text-blue-400 uppercase tracking-widest mt-1">Multiplayer Office League</div>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Your Name (CEO)</label>
+            <input id="mpName" type="text" maxlength="24" placeholder="e.g. Scott" class="${mpInputCls()}" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Carrier Name <span class="normal-case font-medium text-slate-500">(optional)</span></label>
+            <input id="mpCarrierName" type="text" maxlength="40" placeholder="e.g. Heartland Haulers Mutual" class="${mpInputCls()}" />
+          </div>
+          <button onclick="mpUiCreate()" class="w-full px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-extrabold shadow-lg shadow-blue-600/30 transition">Create Room (Host)</button>
+          <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <div class="h-px flex-1 bg-slate-800"></div><span>or join</span><div class="h-px flex-1 bg-slate-800"></div>
+          </div>
+          <div class="flex gap-2">
+            <input id="mpJoinCode" value="${prefill}" placeholder="CODE" maxlength="4" class="${mpInputCls()} uppercase tracking-[0.3em] text-center font-extrabold" />
+            <button onclick="mpUiJoin()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-sm font-extrabold transition whitespace-nowrap">Join Room</button>
+          </div>
+          <button onclick="mpUiSolo()" class="w-full text-xs text-slate-500 hover:text-slate-300 font-semibold py-1 transition">Play solo instead (single player, no room)</button>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-snug mt-4">How it works: one person creates a room and shares the link or 4-letter code. Everyone sets their quarterly levers and locks in; the host's browser runs the quarter for all 10 carriers at once (AI fills empty seats) and pushes results to everyone.</p>`;
+      if (prefill) setTimeout(() => document.getElementById("mpName").focus(), 50);
+    } else if (phase === "host") {
+      card.innerHTML = `
+        <div class="text-center mb-3">
+          <div class="text-[11px] font-bold text-blue-400 uppercase tracking-widest">Room Code</div>
+          <div class="text-5xl font-extrabold tracking-[0.25em] text-white my-2">${MP.room}</div>
+          <button onclick="mpUiCopyLink()" class="text-xs font-bold text-blue-400 hover:text-blue-300 underline underline-offset-2">Copy invite link</button>
+          <span id="mpCopied" class="text-xs text-emerald-400 font-bold ml-2 hidden">Copied!</span>
+        </div>
+        <div class="space-y-1.5 mb-3" id="mpLobbyRoster">${mpRosterChipsHtml()}</div>
+        <button onclick="mpUiStart()" class="w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-extrabold shadow-lg shadow-emerald-600/30 transition">Start Season</button>
+        <p class="text-[11px] text-slate-500 leading-snug mt-3">Up to 9 more players can join with the code - AI carriers fill every empty seat. You can start with any number of humans; latecomers can even join mid-season and take over an AI carrier.</p>`;
+    } else if (phase === "joined") {
+      card.innerHTML = `
+        <div class="text-center mb-3">
+          <div class="text-[11px] font-bold text-blue-400 uppercase tracking-widest">Joined Room</div>
+          <div class="text-4xl font-extrabold tracking-[0.25em] text-white my-2">${MP.room}</div>
+          <div class="text-xs text-slate-400 font-semibold">Waiting for the host to start the season&hellip;</div>
+        </div>
+        <div class="space-y-1.5" id="mpLobbyRoster">${mpRosterChipsHtml()}</div>`;
+    } else if (phase === "error") {
+      card.innerHTML = `
+        <div class="text-center space-y-3">
+          <div class="text-lg font-extrabold text-rose-400">Could not connect</div>
+          <p class="text-sm text-slate-300">${mpEsc(errMsg || "Unknown error")}</p>
+          <button onclick="mpRenderLobby('entry')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold border border-slate-700 transition">Back</button>
+        </div>`;
+    }
+  };
+
+  window.mpUiCopyLink = function () {
+    const link = mpShareLink();
+    const done = () => {
+      const el = document.getElementById("mpCopied");
+      if (el) { el.classList.remove("hidden"); setTimeout(() => el.classList.add("hidden"), 2000); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, done);
+    else done();
+  };
+
+  window.mpUiSolo = function () { mpCloseLobby(); showToast("Solo mode - you run every quarter yourself.", "success"); };
+
+  // ---------------- Disconnect detection (heartbeat) ----------------
+  // PeerJS does not reliably fire conn close when a tab dies, so both sides
+  // heartbeat every 5s; 15s of silence marks the seat as left.
+  const MP_HB_MS = 5000, MP_TIMEOUT_MS = 15000;
+
+  function mpMarkLeft(p) {
+    p.connected = false; p.locked = false;
+    const c = gameState.carriers.find(x => x.id === p.carrierId);
+    if (c) c.humanControlled = false; // AI pilot retakes the seat
+    showToast(p.name + " left - AI takes over " + (c ? c.name : "their carrier") + ".", "warn");
+    mpBroadcastRoster();
+    mpUpdateHeaderUI();
+  }
+
+  function mpStartHeartbeat() {
+    if (MP.hbTimer) clearInterval(MP.hbTimer);
+    MP.hbTimer = setInterval(() => {
+      if (!MP.active) return;
+      if (MP.role === "host") {
+        const now = Date.now();
+        MP.players.forEach(p => {
+          if (!p.isHost && p.connected && p.lastSeen && now - p.lastSeen > MP_TIMEOUT_MS) mpMarkLeft(p);
+        });
+        mpBroadcast({ t: "hb" });
+      } else if (MP.role === "player") {
+        if (MP.hostConn && MP.hostConn.open) MP.hostConn.send({ t: "hb" });
+        if (MP.lastHostSeen && Date.now() - MP.lastHostSeen > MP_TIMEOUT_MS) {
+          MP.active = false;
+          mpShowLobby();
+          mpRenderLobby("error", "Lost connection to the host. Ask them to re-share the invite link (the season ends when their tab closes).");
+        }
+      }
+    }, MP_HB_MS);
+  }
+
+  window.addEventListener("beforeunload", () => {
+    try {
+      if (MP.role === "player" && MP.hostConn && MP.hostConn.open) MP.hostConn.send({ t: "bye" });
+      if (MP.role === "host") mpBroadcast({ t: "hostbye" });
+    } catch (_) {}
+  });
+
+  // ---------------- Host side ----------------
+  window.mpUiCreate = function () {
+    const name = (document.getElementById("mpName").value || "").trim();
+    if (!name) { document.getElementById("mpName").focus(); document.getElementById("mpName").classList.add("ring-2", "ring-rose-500"); return; }
+    MP.myName = name;
+    MP.myCarrierName = (document.getElementById("mpCarrierName").value || "").trim();
+    MP.role = "host";
+    MP.room = mpMakeRoom();
+    mpHostConnect();
+  };
+
+  function mpHostConnect() {
+    MP.peer = new Peer(MP_PREFIX + MP.room + "-host");
+    MP.peer.on("open", () => {
+      MP.active = true;
+      MP.myCarrierId = "user";
+      const u = getUser();
+      u.ceo = MP.myName;
+      if (MP.myCarrierName) u.name = MP.myCarrierName;
+      MP.players = [{ peerId: MP.peer.id, carrierId: "user", name: MP.myName, locked: false, connected: true, isHost: true, carrierName: u.name }];
+      mpRenderLobby("host");
+      renderAll();
+      mpUpdateHeaderUI();
+      mpRenderStatusBar();
+      mpStartHeartbeat();
+    });
+    MP.peer.on("connection", conn => {
+      MP.conns[conn.peer] = conn;
+      conn.on("data", msg => mpHostOnMessage(conn, msg));
+      conn.on("close", () => {
+        delete MP.conns[conn.peer];
+        const p = MP.players.find(x => x.peerId === conn.peer);
+        if (p) {
+          p.connected = false; p.locked = false;
+          const c = gameState.carriers.find(x => x.id === p.carrierId);
+          if (c) c.humanControlled = false; // AI pilot retakes the seat
+          showToast(p.name + " left - AI takes over " + (c ? c.name : "their carrier") + ".", "warn");
+        }
+        mpBroadcastRoster();
+        mpUpdateHeaderUI();
+      });
+    });
+    MP.peer.on("error", e => {
+      if (e.type === "unavailable-id") { MP.room = mpMakeRoom(); try { MP.peer.destroy(); } catch (_) {} mpHostConnect(); }
+      else if (!MP.active) mpRenderLobby("error", "Signaling error (" + e.type + "). Check the network and try again.");
+    });
+  }
+
+  function mpHostOnMessage(conn, msg) {
+    if (!msg || !msg.t) return;
+    const sender = MP.players.find(x => x.peerId === conn.peer);
+    if (sender) sender.lastSeen = Date.now();
+    if (msg.t === "hb") return;
+    if (msg.t === "bye") { if (sender && sender.connected) mpMarkLeft(sender); return; }
+    if (msg.t === "hostbye") return;
+    if (msg.t === "hello") {
+      const slot = gameState.carriers.find(c => c.id !== "user" && !c.humanControlled);
+      if (!slot) { conn.send({ t: "full" }); return; }
+      slot.humanControlled = true;
+      slot.ceo = String(msg.name || "Player").slice(0, 24);
+      if (msg.carrierName) slot.name = String(msg.carrierName).slice(0, 40);
+      // Give the human the same neutral starting levers as the host instead of the AI's quirks
+      const u = getUser();
+      slot.channels = { ...u.channels };
+      slot.pricing = u.pricing;
+      slot.appetite = u.appetite;
+      slot.lines = { ...u.lines };
+      const player = { peerId: conn.peer, carrierId: slot.id, name: slot.ceo, locked: false, connected: true, isHost: false, carrierName: slot.name, lastSeen: Date.now() };
+      MP.players.push(player);
+      conn.send({ t: "welcome", carrierId: slot.id, started: MP.started, state: MP.started ? gameState : null, players: mpPublicRoster() });
+      mpBroadcastRoster();
+      if (MP.started) conn.send({ t: "state", state: gameState, players: mpPublicRoster() });
+      showToast(slot.ceo + " joined as " + slot.name + "!", "success");
+    } else if (msg.t === "decision") {
+      if (msg.quarter !== gameState.quarter) return; // stale, ignore
+      mpApplyDecision(msg.carrierId, msg.decision);
+      const p = MP.players.find(x => x.carrierId === msg.carrierId);
+      if (p) p.locked = true;
+      mpBroadcastRoster();
+      const connected = MP.players.filter(x => x.connected && !x.isHost);
+      if (connected.length > 0 && connected.every(x => x.locked)) showToast("All players locked in - run the quarter when ready!", "success");
+      mpUpdateHeaderUI();
+    } else if (msg.t === "unlock") {
+      const p = MP.players.find(x => x.carrierId === msg.carrierId);
+      if (p) p.locked = false;
+      mpBroadcastRoster();
+      mpUpdateHeaderUI();
+    }
+  }
+
+  function mpApplyDecision(carrierId, d) {
+    const c = gameState.carriers.find(x => x.id === carrierId);
+    if (!c || !d) return;
+    c.channels = d.channels; c.pricing = d.pricing; c.appetite = d.appetite;
+    c.lines = d.lines; c.deptPay = d.deptPay; c.deptStaffing = d.deptStaffing; c.tech = d.tech;
+    if (d.name) c.name = String(d.name).slice(0, 40);
+    if (d.ceo) c.ceo = String(d.ceo).slice(0, 24);
+    if (d.city) c.city = d.city;
+    const p = MP.players.find(x => x.carrierId === carrierId);
+    if (p) p.carrierName = c.name;
+  }
+
+  function mpPublicRoster() {
+    return MP.players.map(p => ({
+      carrierId: p.carrierId, name: p.name, locked: p.locked,
+      connected: p.connected, isHost: p.isHost,
+      carrierName: (gameState.carriers.find(c => c.id === p.carrierId) || {}).name || ""
+    }));
+  }
+  function mpBroadcast(msg) {
+    Object.values(MP.conns).forEach(c => { if (c.open) c.send(msg); });
+  }
+  function mpBroadcastRoster() {
+    mpBroadcast({ t: "roster", players: mpPublicRoster() });
+    mpRenderStatusBar();
+    if (MP.role === "host" && !MP.started) mpRenderLobby("host");
+  }
+
+  window.mpUiStart = function () {
+    MP.started = true;
+    mpBroadcast({ t: "start", state: gameState, players: mpPublicRoster() });
+    mpCloseLobby();
+    renderAll();
+    mpUpdateHeaderUI();
+    mpRenderStatusBar();
+    showToast("Season started! Quarter advances when you run it - wait for lock-ins.", "success");
+  };
+
+  window.mpHostRun = function (count) {
+    for (let step = 0; step < count; step++) simulateSingleQuarter();
+    MP.players.forEach(p => p.locked = false);
+    renderAll();
+    mpBroadcast({ t: "state", state: gameState, players: mpPublicRoster() });
+    mpUpdateHeaderUI();
+    mpRenderStatusBar();
+    const q = gameState.quarter, y = Math.ceil(q / 4), qInY = ((q - 1) % 4) + 1;
+    showToast(`Y${y} Q${qInY} simulated for all 10 carriers!`, "success");
+  };
+
+  window.mpHostReset = function () {
+    gameState = initGameState();
+    MP.players.forEach(p => {
+      const c = gameState.carriers.find(x => x.id === p.carrierId);
+      if (c && p.connected && !p.isHost) { c.humanControlled = true; c.ceo = p.name; }
+      p.locked = false;
+    });
+    const u = getUser();
+    u.ceo = MP.myName;
+    if (MP.myCarrierName) u.name = MP.myCarrierName;
+    renderAll();
+    mpBroadcast({ t: "state", state: gameState, players: mpPublicRoster() });
+    mpUpdateHeaderUI();
+    mpRenderStatusBar();
+    showToast("Season reset to Year 0 Pre-Q1 for everyone.", "warn");
+  };
+
+  // ---------------- Player side ----------------
+  window.mpUiJoin = function () {
+    const name = (document.getElementById("mpName").value || "").trim();
+    const code = (document.getElementById("mpJoinCode").value || "").trim().toUpperCase();
+    if (!name) { document.getElementById("mpName").focus(); document.getElementById("mpName").classList.add("ring-2", "ring-rose-500"); return; }
+    if (code.length !== 4) { document.getElementById("mpJoinCode").focus(); document.getElementById("mpJoinCode").classList.add("ring-2", "ring-rose-500"); return; }
+    MP.myName = name;
+    MP.myCarrierName = (document.getElementById("mpCarrierName").value || "").trim();
+    MP.role = "player";
+    MP.room = code;
+    MP.peer = new Peer();
+    MP.peer.on("open", () => {
+      const conn = MP.peer.connect(MP_PREFIX + MP.room + "-host", { reliable: true });
+      MP.hostConn = conn;
+      conn.on("open", () => conn.send({ t: "hello", name: MP.myName, carrierName: MP.myCarrierName }));
+      conn.on("data", mpPlayerOnMessage);
+      conn.on("close", () => {
+        if (MP.active) {
+          MP.active = false;
+          mpShowLobby();
+          mpRenderLobby("error", "The host ended the session (their browser tab closed). Ask them to host a new room.");
+        }
+      });
+    });
+    MP.peer.on("error", e => {
+      if (e.type === "peer-unavailable") mpRenderLobby("error", "Room " + MP.room + " not found. Double-check the code, or ask the host to re-share the invite link.");
+      else if (!MP.active) mpRenderLobby("error", "Signaling error (" + e.type + "). Check the network and try again.");
+    });
+  };
+
+  function mpPlayerOnMessage(msg) {
+    if (!msg || !msg.t) return;
+    MP.lastHostSeen = Date.now();
+    if (msg.t === "hb") return;
+    if (msg.t === "hostbye") {
+      MP.active = false;
+      mpShowLobby();
+      mpRenderLobby("error", "The host ended the season. Ask them to host a new room when you're ready to play again.");
+      return;
+    }
+    if (msg.t === "welcome") {
+      MP.active = true;
+      MP.myCarrierId = msg.carrierId;
+      MP.players = msg.players || [];
+      MP.started = !!msg.started;
+      if (MP.started) {
+        gameState = msg.state;
+        mpApplyLocalView();
+        mpSyncControls();
+        renderAll();
+        mpCloseLobby();
+        mpRenderStatusBar();
+        mpUpdateHeaderUI();
+        showToast("Joined mid-season - you now run " + getUser().name + "!", "success");
+      } else {
+        mpRenderLobby("joined");
+      }
+      mpStartHeartbeat();
+    } else if (msg.t === "full") {
+      mpRenderLobby("error", "That room is full - all 10 carriers already have human CEOs.");
+    } else if (msg.t === "roster") {
+      MP.players = msg.players || [];
+      if (!MP.started) mpRenderLobby("joined");
+      mpRenderStatusBar();
+    } else if (msg.t === "start") {
+      MP.started = true;
+      MP.players = msg.players || [];
+      gameState = msg.state;
+      mpApplyLocalView();
+      mpSyncControls();
+      renderAll();
+      mpCloseLobby();
+      mpRenderStatusBar();
+      mpUpdateHeaderUI();
+      showToast("Season started! Set your levers, then lock in for Y1 Q1.", "success");
+    } else if (msg.t === "state") {
+      gameState = msg.state;
+      MP.players = msg.players || MP.players;
+      MP.locked = false;
+      mpApplyLocalView();
+      mpSyncControls();
+      renderAll();
+      mpRenderStatusBar();
+      mpUpdateHeaderUI();
+      const q = gameState.quarter, y = Math.ceil(q / 4), qInY = ((q - 1) % 4) + 1;
+      showToast(`Y${y} Q${qInY} simulated! Review your results and set next quarter's levers.`, "success");
+    }
+  }
+
+  function mpApplyLocalView() {
+    gameState.carriers.forEach(c => { c.isUser = (c.id === MP.myCarrierId); });
+    gameState.selectedMapCarrierId = MP.myCarrierId;
+  }
+
+  function mpSyncControls() {
+    const u = getUser();
+    document.getElementById("ceoNameInput").value = u.ceo;
+    document.getElementById("companyNameInput").value = u.name;
+    document.getElementById("hqCitySelect").value = u.city;
+    document.getElementById("sliderDirect").value = u.channels.direct;
+    document.getElementById("sliderRetail").value = u.channels.retail;
+    document.getElementById("sliderWholesale").value = u.channels.wholesale;
+    document.getElementById("valDirect").textContent = u.channels.direct + "%";
+    document.getElementById("valRetail").textContent = u.channels.retail + "%";
+    document.getElementById("valWholesale").textContent = u.channels.wholesale + "%";
+    document.getElementById("sliderPricing").value = u.pricing;
+    updatePricingUI();
+  }
+
+  window.mpToggleLock = function () {
+    if (!MP.active || MP.role !== "player" || !MP.hostConn || !MP.hostConn.open) return;
+    MP.locked = !MP.locked;
+    if (MP.locked) {
+      const u = getUser();
+      const d = {
+        channels: { ...u.channels }, pricing: u.pricing, appetite: u.appetite,
+        lines: { ...u.lines }, deptPay: { ...u.deptPay }, deptStaffing: { ...u.deptStaffing }, tech: { ...u.tech },
+        name: u.name, ceo: u.ceo, city: u.city
+      };
+      MP.hostConn.send({ t: "decision", carrierId: MP.myCarrierId, quarter: gameState.quarter, decision: d });
+    } else {
+      MP.hostConn.send({ t: "unlock", carrierId: MP.myCarrierId, quarter: gameState.quarter });
+    }
+    mpUpdateHeaderUI();
+    mpRenderStatusBar();
+  };
+
+  // ---------------- Shared chrome (header + status bar) ----------------
+  function mpUpdateHeaderUI() {
+    if (!MP.active) return;
+    const btn = document.getElementById("btnRunQuarter");
+    const lockPrefs = document.getElementById("btnLockPrefs");
+    const reset = document.getElementById("btnReset");
+    const commish = document.getElementById("tab-commish");
+    if (!btn) return;
+    const label = btn.querySelector("span");
+    if (MP.role === "host") {
+      const conn = MP.players.filter(p => p.connected && !p.isHost);
+      const locked = conn.filter(p => p.locked).length;
+      label.textContent = conn.length ? `Run Quarter (${locked}/${conn.length} locked)` : "Run Quarter";
+    } else {
+      label.textContent = MP.locked ? "✓ Locked In - Waiting for Host" : "🔒 Lock In Decisions";
+      btn.className = MP.locked
+        ? "px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition"
+        : "px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition";
+      if (lockPrefs) lockPrefs.style.display = "none";
+      if (reset) reset.style.display = "none";
+      if (commish) commish.style.display = "none";
+    }
+  }
+
+  function mpRenderStatusBar() {
+    if (!MP.active) return;
+    let bar = document.getElementById("mpStatusBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "mpStatusBar";
+      bar.className = "bg-slate-900 border-b border-slate-800";
+      const main = document.querySelector("main");
+      main.parentNode.insertBefore(bar, main);
+    }
+    const roster = MP.role === "host" ? mpPublicRoster() : MP.players;
+    const chips = roster.map(p => {
+      const state = !p.connected ? '<span class="text-slate-500">AI</span>'
+        : p.isHost ? '<span class="text-amber-300">HOST</span>'
+        : p.locked ? '<span class="text-emerald-300">&#10003;</span>'
+        : '<span class="text-slate-500">&hellip;</span>';
+      const mine = p.carrierId === MP.myCarrierId;
+      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${mine ? "bg-blue-600/20 border-blue-500/50 text-blue-200" : "bg-slate-950 border-slate-800 text-slate-300"}">${mpEsc(p.name)} ${state}</span>`;
+    }).join("");
+    const me = (gameState.carriers || []).find(c => c.id === MP.myCarrierId);
+    bar.innerHTML = `<div class="max-w-[1440px] mx-auto px-4 py-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+      <span class="font-extrabold text-slate-300 uppercase tracking-wider">Room <span class="text-blue-400 tracking-[0.2em]">${MP.room}</span></span>
+      <span class="text-slate-600">|</span>
+      <span class="text-slate-400">You: <strong class="text-slate-200">${mpEsc(me ? me.name : "")}</strong></span>
+      <span class="text-slate-600">|</span>
+      <span class="flex flex-wrap gap-1.5">${chips}</span>
+      <button onclick="mpUiCopyLink()" class="ml-auto text-blue-400 hover:text-blue-300 font-bold underline underline-offset-2">Copy invite link</button>
+    </div>`;
+  }
+
+  // ---------------- Hook into the stock game ----------------
+  const mpOrigRun = window.runQuarter;
+  window.runQuarter = function (count = 1) {
+    if (MP.active && MP.role === "player") { mpToggleLock(); return; }
+    if (MP.active && MP.role === "host") { mpHostRun(count); return; }
+    mpOrigRun(count);
+  };
+
+  const mpOrigReset = window.resetSeason;
+  window.resetSeason = function () {
+    if (MP.active && MP.role === "player") { showToast("Only the host can reset the season.", "warn"); return; }
+    if (MP.active && MP.role === "host") { mpHostReset(); return; }
+    mpOrigReset();
+  };
+
+  // Any lever edit after locking silently un-locks and re-arms the decision
+  ["setAppetite", "toggleLine", "setDeptPay", "setDeptStaffing", "setTechTier", "adjustChannels", "updatePricingUI", "updateIdentity"].forEach(fnName => {
+    const orig = window[fnName];
+    if (typeof orig !== "function") return;
+    window[fnName] = function (...args) {
+      const r = orig.apply(this, args);
+      if (MP.active && MP.role === "player" && MP.locked) {
+        MP.locked = false;
+        if (MP.hostConn && MP.hostConn.open) MP.hostConn.send({ t: "unlock", carrierId: MP.myCarrierId, quarter: gameState.quarter });
+        mpUpdateHeaderUI();
+        mpRenderStatusBar();
+      }
+      return r;
+    };
+  });
+
+  // ---------------- Boot ----------------
+  window.addEventListener("load", () => {
+    if (new URLSearchParams(location.search).get("solo") === "1") return;
+    mpRenderLobby("entry");
+    mpShowLobby();
+  });
+})();
+</script>
+
+</body>
+</html>
